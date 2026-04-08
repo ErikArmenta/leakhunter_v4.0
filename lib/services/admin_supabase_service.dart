@@ -12,7 +12,6 @@ class AdminSupabaseService {
       final response = await _client.functions.invoke(
         'admin-list-users',
         method: HttpMethod.get,
-        headers: {'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken ?? ''}'},
       );
       final data = response.data as Map<String, dynamic>;
       final users = data['users'] as List<dynamic>;
@@ -32,7 +31,6 @@ class AdminSupabaseService {
     try {
       final response = await _client.functions.invoke(
         'admin-create-user',
-        headers: {'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken ?? ''}'},
         body: {'email': email, 'password': password, 'role': role, 'name': name},
       );
       final data = response.data as Map<String, dynamic>;
@@ -52,7 +50,6 @@ class AdminSupabaseService {
     try {
       final response = await _client.functions.invoke(
         'admin-update-user',
-        headers: {'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken ?? ''}'},
         body: {
           'id': id,
           if (password != null && password.isNotEmpty) 'password': password,
@@ -72,7 +69,6 @@ class AdminSupabaseService {
     try {
       final response = await _client.functions.invoke(
         'admin-delete-user',
-        headers: {'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken ?? ''}'},
         body: {'id': id},
       );
       final data = response.data as Map<String, dynamic>;
