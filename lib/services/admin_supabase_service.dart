@@ -7,11 +7,17 @@ import '../config/supabase_config.dart';
 class AdminSupabaseService {
   final _client = SupabaseConfig.client;
 
+  /// Helper para construir los headers con el JWT actual del usuario logueado.
+  Map<String, String> get _authHeaders => {
+    'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken ?? ''}',
+  };
+
   Future<List<AppUser>> listUsers() async {
     try {
       final response = await _client.functions.invoke(
         'admin-list-users',
         method: HttpMethod.get,
+        headers: _authHeaders,
       );
       final data = response.data as Map<String, dynamic>;
       final users = data['users'] as List<dynamic>;
@@ -31,6 +37,7 @@ class AdminSupabaseService {
     try {
       final response = await _client.functions.invoke(
         'admin-create-user',
+        headers: _authHeaders,
         body: {'email': email, 'password': password, 'role': role, 'name': name},
       );
       final data = response.data as Map<String, dynamic>;
@@ -50,6 +57,7 @@ class AdminSupabaseService {
     try {
       final response = await _client.functions.invoke(
         'admin-update-user',
+        headers: _authHeaders,
         body: {
           'id': id,
           if (password != null && password.isNotEmpty) 'password': password,
@@ -69,6 +77,7 @@ class AdminSupabaseService {
     try {
       final response = await _client.functions.invoke(
         'admin-delete-user',
+        headers: _authHeaders,
         body: {'id': id},
       );
       final data = response.data as Map<String, dynamic>;
