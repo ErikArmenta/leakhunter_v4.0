@@ -56,12 +56,19 @@ class SupabaseService {
   Future<String?> uploadEvidencePhoto(Uint8List fileBytes, String fileName) async {
     try {
       final path = 'evidencia_$fileName';
+      String mimeType = 'image/jpeg';
+      final lowerName = fileName.toLowerCase();
+      if (lowerName.endsWith('.mp4')) mimeType = 'video/mp4';
+      else if (lowerName.endsWith('.mov')) mimeType = 'video/quicktime';
+      else if (lowerName.endsWith('.webm')) mimeType = 'video/webm';
+      else if (lowerName.endsWith('.png')) mimeType = 'image/png';
+
       await _client.storage.from('evidencia_fugas').uploadBinary(
         path,
         fileBytes,
-        fileOptions: const FileOptions(
+        fileOptions: FileOptions(
           upsert: true,
-          contentType: 'image/jpeg',
+          contentType: mimeType,
         ),
       );
       final publicUrl = _client.storage.from('evidencia_fugas').getPublicUrl(path);

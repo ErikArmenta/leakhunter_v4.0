@@ -8859,15 +8859,16 @@ const RESOURCES = {"assets/AssetManifest.bin": "25c9cabc4063e640dd6dfe66bcc528f6
 "canvaskit/skwasm_heavy.wasm": "8034ad26ba2485dab2fd49bdd786837b",
 "favicon.png": "136f6b659f748f54b45c45dbcf88a757",
 "flutter.js": "888483df48293866f9f41d3d9274a779",
-"flutter_bootstrap.js": "d66340fb24c04f2aeebf3c68fa85315d",
+"flutter_bootstrap.js": "8e41c4f84360eb641cd75b0f0882c456",
 "icons/Icon-192.png": "40cb91c24ab9c1956b2d70ea5b89ede1",
 "icons/Icon-512.png": "fd6de53bbce4ab7a8fe71033aee20873",
 "icons/Icon-maskable-192.png": "40cb91c24ab9c1956b2d70ea5b89ede1",
 "icons/Icon-maskable-512.png": "fd6de53bbce4ab7a8fe71033aee20873",
 "index.html": "a2aa994fb3ae62f13c337ad880fd91f1",
 "/": "a2aa994fb3ae62f13c337ad880fd91f1",
-"main.dart.js": "3d71314afa8aa5e3e54ca55dd31fbdd8",
+"main.dart.js": "82f322cae13948b0cf09479682b88b54",
 "manifest.json": "d41d8cd98f00b204e9800998ecf8427e",
+"vercel.json": "d41d8cd98f00b204e9800998ecf8427e",
 "version.json": "8a05207b26801c94eda49176f1bf7b75"};
 // The application shell files that are downloaded before a service worker can
 // start.
