@@ -5,7 +5,7 @@ import '../models/fuga.dart';
 import '../screens/fuga_detail_map_screen.dart';
 import 'fullscreen_image_viewer.dart';
 import 'audit_timeline_widget.dart';
-import 'audit_timeline_widget.dart';
+import 'media_thumbnail.dart';
 
 class DrillDownDialog extends StatelessWidget {
   final String title;
@@ -330,34 +330,12 @@ class DrillDownDialog extends StatelessWidget {
                         children: [
                           if (fuga.fotoDeteccion != null)
                             Expanded(
-                              child: GestureDetector(
-                                onTap: () => showFullScreenImage(context, fuga.fotoDeteccion!),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    fuga.fotoDeteccion!,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_,__,___) => const SizedBox(height: 100, child: Center(child: Icon(Icons.broken_image, color: Colors.grey))),
-                                  ),
-                                ),
-                              ),
+                              child: MediaThumbnail(url: fuga.fotoDeteccion!),
                             ),
                           if (fuga.fotoDeteccion != null && fuga.fotoReparacion != null) const SizedBox(width: 12),
                           if (fuga.fotoReparacion != null)
                             Expanded(
-                              child: GestureDetector(
-                                onTap: () => showFullScreenImage(context, fuga.fotoReparacion!),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    fuga.fotoReparacion!,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_,__,___) => const SizedBox(height: 100, child: Center(child: Icon(Icons.broken_image, color: Colors.grey))),
-                                  ),
-                                ),
-                              ),
+                              child: MediaThumbnail(url: fuga.fotoReparacion!),
                             ),
                         ],
                       ),

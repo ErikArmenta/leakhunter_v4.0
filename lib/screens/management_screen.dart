@@ -9,6 +9,7 @@ import '../config/constants.dart';
 import '../models/fuga.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ManagementScreen extends ConsumerStatefulWidget {
   const ManagementScreen({super.key});
@@ -570,14 +571,12 @@ Widget _buildRegistrationForm() {
           children: [
             Expanded(child: _buildPhotoPicker("📷 Evidencia Detección", null, _fotoDeteccionFile, () async {
               final picker = ImagePicker();
-              final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-              if (file != null) setState(() => _fotoDeteccionFile = file);
+              await _handleMediaPick(context, picker, (f) => setState(() => _fotoDeteccionFile = f));
             })),
             const SizedBox(width: 16),
             Expanded(child: _buildPhotoPicker("📷 Evidencia Reparación", null, _fotoReparacionFile, () async {
               final picker = ImagePicker();
-              final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-              if (file != null) setState(() => _fotoReparacionFile = file);
+              await _handleMediaPick(context, picker, (f) => setState(() => _fotoReparacionFile = f));
             })),
           ],
         ),
@@ -778,7 +777,72 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
   );
 }
 
+  static bool isVideoUrl(String? url) {
+    if (url == null) return false;
+    final lower = url.toLowerCase();
+    return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.avi');
+  }
+
+  Future<void> _handleMediaPick(BuildContext context, ImagePicker picker, Function(XFile) onPicked) async {
+    final file = await picker.pickMedia(imageQuality: 70);
+    if (file != null) {
+      final len = await file.length();
+      if (len > 10 * 1024 * 1024) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("❌ El archivo excede los 10 MB permitidos.", style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      onPicked(file);
+    }
+  }
+
   Widget _buildPhotoPicker(String label, String? existingUrl, XFile? selectedFile, VoidCallback onPick) {
+    bool selectedIsVideo = selectedFile != null && isVideoUrl(selectedFile.name);
+    bool existingIsVideo = existingUrl != null && isVideoUrl(existingUrl);
+
+    Widget innerContent;
+    if (selectedFile != null) {
+      innerContent = Center(child: Text(selectedIsVideo ? "✅ Video listo" : "✅ Foto lista", style: const TextStyle(color: Colors.green)));
+    } else if (existingUrl != null) {
+      if (existingIsVideo) {
+        innerContent = InkWell(
+          onTap: () => launchUrl(Uri.parse(existingUrl)),
+          child: Container(
+            color: Colors.black87,
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_circle_fill, color: Colors.blueAccent, size: 36),
+                  SizedBox(height: 4),
+                  Text("Reproducir", style: TextStyle(color: Colors.white, fontSize: 11)),
+                ],
+              ),
+            ),
+          ),
+        );
+      } else {
+        innerContent = ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(existingUrl, fit: BoxFit.cover, errorBuilder: (c,e,s) => const Center(child: Icon(Icons.broken_image, color: Colors.grey))),
+        );
+      }
+    } else {
+      innerContent = Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.camera_alt, color: Colors.grey),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          ],
+        ),
+      );
+    }
+
     return InkWell(
       onTap: onPick,
       borderRadius: BorderRadius.circular(8),
@@ -789,23 +853,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0xFF2d323d)),
         ),
-        child: selectedFile != null
-            ? const Center(child: Text("✅ Foto lista para subir", style: TextStyle(color: Colors.green)))
-            : existingUrl != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(existingUrl, fit: BoxFit.cover, errorBuilder: (c,e,s) => const Center(child: Icon(Icons.broken_image, color: Colors.grey))),
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.camera_alt, color: Colors.grey),
-                        const SizedBox(height: 4),
-                        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                      ],
-                    ),
-                  ),
+        child: innerContent,
       ),
     );
   }
@@ -839,12 +887,14 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
     try {
       if (_fotoDeteccionFile != null) {
         final bytes = await _fotoDeteccionFile!.readAsBytes();
-        urlDeteccion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "det_${DateTime.now().millisecondsSinceEpoch}.jpg");
+        final ext = _fotoDeteccionFile!.name.split('.').last;
+        urlDeteccion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "det_${DateTime.now().millisecondsSinceEpoch}.$ext");
         if (urlDeteccion == null) throw Exception("Upload failed");
       }
       if (_fotoReparacionFile != null) {
         final bytes = await _fotoReparacionFile!.readAsBytes();
-        urlReparacion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "rep_${DateTime.now().millisecondsSinceEpoch}.jpg");
+        final ext = _fotoReparacionFile!.name.split('.').last;
+        urlReparacion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "rep_${DateTime.now().millisecondsSinceEpoch}.$ext");
         if (urlReparacion == null) throw Exception("Upload failed");
       }
     } catch (e) {
@@ -1165,6 +1215,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
     String editCategoria = f.categoria;
     String editZona = f.zona;
     String editArea = f.area;
+    String editIdMaquina = f.idMaquina;
     String editSeveridad = f.severidad;
     String editUbicacion = f.ubicacion;
     String editEstado = f.estado;
@@ -1223,6 +1274,12 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                           Expanded(
                             child: Column(
                               children: [
+                                TextFormField(
+                                  decoration: const InputDecoration(labelText: "ID Equipo / Máquina"),
+                                  initialValue: editIdMaquina,
+                                  onChanged: (val) => editIdMaquina = val,
+                                ),
+                                const SizedBox(height: 12),
                                 TextFormField(
                                   decoration: const InputDecoration(labelText: "Nombre Zona"),
                                   initialValue: editZona,
@@ -1300,14 +1357,12 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                         children: [
                           Expanded(child: _buildPhotoPicker("📷 Evidencia Detección", f.fotoDeteccion, editFotoDeteccionFile, () async {
                             final picker = ImagePicker();
-                            final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-                            if (file != null) setDialogState(() => editFotoDeteccionFile = file);
+                            await _handleMediaPick(context, picker, (file) => setDialogState(() => editFotoDeteccionFile = file));
                           })),
                           const SizedBox(width: 16),
                           Expanded(child: _buildPhotoPicker("📷 Evidencia Reparación", f.fotoReparacion, editFotoReparacionFile, () async {
                             final picker = ImagePicker();
-                            final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-                            if (file != null) setDialogState(() => editFotoReparacionFile = file);
+                            await _handleMediaPick(context, picker, (file) => setDialogState(() => editFotoReparacionFile = file));
                           })),
                         ],
                       ),
@@ -1346,12 +1401,14 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                               try {
                                 if (editFotoDeteccionFile != null) {
                                   final bytes = await editFotoDeteccionFile!.readAsBytes();
-                                  urlDeteccion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "det_${DateTime.now().millisecondsSinceEpoch}.jpg");
+                                  final ext = editFotoDeteccionFile!.name.split('.').last;
+                                  urlDeteccion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "det_${DateTime.now().millisecondsSinceEpoch}.$ext");
                                   if (urlDeteccion == null) throw Exception();
                                 }
                                 if (editFotoReparacionFile != null) {
                                   final bytes = await editFotoReparacionFile!.readAsBytes();
-                                  urlReparacion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "rep_${DateTime.now().millisecondsSinceEpoch}.jpg");
+                                  final ext = editFotoReparacionFile!.name.split('.').last;
+                                  urlReparacion = await ref.read(supabaseServiceProvider).uploadEvidencePhoto(bytes, "rep_${DateTime.now().millisecondsSinceEpoch}.$ext");
                                   if (urlReparacion == null) throw Exception();
                                 }
                               } catch (e) {
@@ -1368,6 +1425,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                               }
 
                               final updated = f.copyWith(
+                                idMaquina: editIdMaquina,
                                 zona: editZona,
                                 area: editArea,
                                 severidad: editSeveridad,

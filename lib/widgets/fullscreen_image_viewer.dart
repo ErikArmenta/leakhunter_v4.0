@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void showFullScreenImage(BuildContext context, String url) {
+  final lower = url.toLowerCase();
+  if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.avi')) {
+    launchUrl(Uri.parse(url));
+    return;
+  }
+
   showDialog(
     context: context,
     barrierColor: Colors.black87,

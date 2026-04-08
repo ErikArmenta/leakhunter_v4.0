@@ -5,9 +5,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:io';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 import 'dart:convert';
+import 'dart:ui';
+import 'package:flutter/rendering.dart';
+import '../services/web_stub.dart' if (dart.library.html) '../services/web_download_service.dart' as web_service;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -29,6 +30,12 @@ class ReportScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportScreenState extends ConsumerState<ReportScreen> {
+  String _formatCurrency(double amount) {
+    RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    String mathFunc(Match match) => '${match[1]},';
+    return '\$' + amount.toStringAsFixed(0).replaceAllMapped(reg, mathFunc);
+  }
+
   @override
   Widget build(BuildContext context) {
     final fugas = ref.watch(filteredFugasProvider);
@@ -2464,6 +2471,10 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
           );
         },
         build: (pw.Context context) {
+          final bajaCount = fugas.where((f) => f.severidad == 'Baja').length;
+          final mediaCount = fugas.where((f) => f.severidad == 'Media').length;
+          final altaCount = fugas.where((f) => f.severidad == 'Alta').length;
+
           return [
             pw.Header(
               level: 1,
@@ -2476,7 +2487,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 _buildKPIBox("Hallazgos\nTotales", "${fugas.length}", PdfColors.blueGrey700),
-                _buildKPIBox("Impacto Económico", "\$${totalImpact.toStringAsFixed(0)}", PdfColors.red700),
+                _buildKPIBox("Impacto Económico", _formatCurrency(totalImpact), PdfColors.red700),
                 _buildKPIBox("Fugas\nReparadas", "$reparadas", PdfColors.green700),
                 _buildKPIBox("Eficiencia\nGlobal", "$eficiencia%", colorSecundario),
               ]
@@ -2485,12 +2496,12 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
 
             pw.Header(
               level: 1,
-              child: pw.Text("2. Perfil de Daños", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+              child: pw.Text("2. Gráficos de Análisis", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
               decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
             ),
             pw.SizedBox(height: 15),
             
-            pw.Row(
+              pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Expanded(
@@ -2502,24 +2513,24 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       pw.Container(
                         height: 120,
                         child: pw.Chart(
-                          left: pw.Container(),
-                          bottom: pw.ChartLegend(),
-                          grid: pw.CartesianGrid(
-                            xAxis: pw.FixedAxis([0, 1, 2], buildLabel: (v) => pw.Text(v==0?"Dañadas":v==1?"Proc.":"Reparadas", style: pw.TextStyle(fontSize: 8))),
-                            yAxis: pw.FixedAxis([0, 5, 10, 15, 20], buildLabel: (v) => pw.Text(v.toInt().toString(), style: const pw.TextStyle(fontSize: 8))),
-                          ),
+                          grid: pw.PieGrid(),
                           datasets: [
-                             pw.BarDataSet(
-                               color: PdfColors.blueAccent,
-                               width: 20,
-                               data: [
-                                 pw.PointChartValue(0, danadas.toDouble()),
-                                 pw.PointChartValue(1, enProceso.toDouble()),
-                                 pw.PointChartValue(2, reparadas.toDouble()),
-                               ]
-                             )
+                            if (danadas > 0) pw.PieDataSet(value: danadas.toDouble(), color: PdfColor.fromHex('#F44336'), drawBorder: true),
+                            if (enProceso > 0) pw.PieDataSet(value: enProceso.toDouble(), color: PdfColor.fromHex('#FF9800'), drawBorder: true),
+                            if (reparadas > 0) pw.PieDataSet(value: reparadas.toDouble(), color: PdfColor.fromHex('#4CAF50'), drawBorder: true),
                           ]
                         )
+                      ),
+                      pw.SizedBox(height: 10),
+                      pw.Wrap(
+                        spacing: 10,
+                        runSpacing: 5,
+                        alignment: pw.WrapAlignment.center,
+                        children: [
+                           _buildPdfLegendItem('Dañadas ($danadas)', PdfColor.fromHex('#F44336')),
+                           _buildPdfLegendItem('Proc. ($enProceso)', PdfColor.fromHex('#FF9800')),
+                           _buildPdfLegendItem('Reparadas ($reparadas)', PdfColor.fromHex('#4CAF50')),
+                        ]
                       )
                     ]
                   )
@@ -2534,24 +2545,24 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       pw.Container(
                         height: 120,
                         child: pw.Chart(
-                          left: pw.Container(),
-                          bottom: pw.ChartLegend(),
-                          grid: pw.CartesianGrid(
-                            xAxis: pw.FixedAxis([0, 1, 2], buildLabel: (v) => pw.Text(v==0?"Baja":v==1?"Media":"Alta", style: pw.TextStyle(fontSize: 8))),
-                            yAxis: pw.FixedAxis([0, 5, 10, 15, 20], buildLabel: (v) => pw.Text(v.toInt().toString(), style: const pw.TextStyle(fontSize: 8))),
-                          ),
+                          grid: pw.PieGrid(),
                           datasets: [
-                             pw.BarDataSet(
-                               color: PdfColors.orangeAccent,
-                               width: 20,
-                               data: [
-                                 pw.PointChartValue(0, fugas.where((f) => f.severidad == 'Baja').length.toDouble()),
-                                 pw.PointChartValue(1, fugas.where((f) => f.severidad == 'Media').length.toDouble()),
-                                 pw.PointChartValue(2, fugas.where((f) => f.severidad == 'Alta').length.toDouble()),
-                               ]
-                             )
+                            if (bajaCount > 0) pw.PieDataSet(value: bajaCount.toDouble(), color: PdfColor.fromHex('#8BC34A'), drawBorder: true),
+                            if (mediaCount > 0) pw.PieDataSet(value: mediaCount.toDouble(), color: PdfColor.fromHex('#FFC107'), drawBorder: true),
+                            if (altaCount > 0) pw.PieDataSet(value: altaCount.toDouble(), color: PdfColor.fromHex('#F44336'), drawBorder: true),
                           ]
                         )
+                      ),
+                      pw.SizedBox(height: 10),
+                      pw.Wrap(
+                        spacing: 10,
+                        runSpacing: 5,
+                        alignment: pw.WrapAlignment.center,
+                        children: [
+                           _buildPdfLegendItem('Baja ($bajaCount)', PdfColor.fromHex('#8BC34A')),
+                           _buildPdfLegendItem('Media ($mediaCount)', PdfColor.fromHex('#FFC107')),
+                           _buildPdfLegendItem('Alta ($altaCount)', PdfColor.fromHex('#F44336')),
+                        ]
                       )
                     ]
                   )
@@ -2559,7 +2570,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               ]
             ),
             
-            pw.SizedBox(height: 30),
+            pw.SizedBox(height: 40),
             
             pw.Header(
               level: 1,
@@ -2569,11 +2580,20 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
             pw.SizedBox(height: 15),
             
             pw.TableHelper.fromTextArray(
+              columnWidths: {
+                0: const pw.FixedColumnWidth(40),
+                1: const pw.FlexColumnWidth(2),
+                2: const pw.FlexColumnWidth(1.5),
+                3: const pw.FlexColumnWidth(1.5),
+                4: const pw.FlexColumnWidth(1.2),
+                5: const pw.FlexColumnWidth(1.5),
+                6: const pw.FlexColumnWidth(1.2),
+              },
               headerAlignment: pw.Alignment.centerLeft,
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),
               headerDecoration: pw.BoxDecoration(color: colorPrimario),
               cellAlignment: pw.Alignment.centerLeft,
-              cellStyle: const pw.TextStyle(fontSize: 9),
+              cellStyle: const pw.TextStyle(fontSize: 8),
               oddRowDecoration: pw.BoxDecoration(color: colorFondoGris),
               data: <List<String>>[
                 <String>['ID', 'Área', 'Máquina', 'Tipo', 'Severidad', 'Costo/Año', 'Estado'],
@@ -2583,7 +2603,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                   f.idMaquina,
                   f.tipoFuga,
                   f.severidad,
-                  "\$${f.costoAnual.toStringAsFixed(0)}",
+                  _formatCurrency(f.costoAnual.toDouble()),
                   f.estado,
                 ]),
               ],
@@ -2647,8 +2667,14 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                 final detImg = photosDeteccion[f.id!.toString()];
                 final repImg = photosReparacion[f.id!.toString()];
 
-                return pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 20),
+                if (detImg == null && repImg == null) {
+                  return pw.SizedBox(); // Skip rendering if no evidence loaded
+                }
+
+                return pw.Wrap(
+                  children: [
+                    pw.Container(
+                      margin: const pw.EdgeInsets.only(bottom: 20),
                   padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
                     color: PdfColors.white,
@@ -2675,7 +2701,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                         children: [
                           pw.Text("Categoría: ${f.tipoFuga} (${f.severidad})", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
                           pw.Text("Status: ${f.estado}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: f.estado == 'Completada' ? PdfColors.green700 : PdfColors.orange700)),
-                          pw.Text("Impacto: \$${f.costoAnual.toStringAsFixed(0)}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+                          pw.Text("Impacto: ${_formatCurrency(f.costoAnual.toDouble())}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
                         ]
                       ),
                       if (f.comentarios.isNotEmpty) ...[
@@ -2723,6 +2749,8 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       )
                     ]
                   )
+                    )
+                  ]
                 );
               }).toList()
             ];
@@ -2758,6 +2786,17 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
           pw.Text(value, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: color)),
         ]
       )
+    );
+  }
+
+  pw.Widget _buildPdfLegendItem(String label, PdfColor color) {
+    return pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      children: [
+        pw.Container(width: 8, height: 8, decoration: pw.BoxDecoration(shape: pw.BoxShape.circle, color: color)),
+        pw.SizedBox(width: 4),
+        pw.Text(label, style: const pw.TextStyle(fontSize: 10)),
+      ]
     );
   }
 
@@ -2928,12 +2967,8 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       final htmlBytes = utf8.encode(htmlContent);
 
       if (kIsWeb) {
-        // En web: abrir directamente en nueva pestaña (blob de ~8MB no se puede descargar via click)
-        final blob = html.Blob([htmlBytes], 'text/html');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        html.window.open(url, '_blank');
-        // Revocar después de un delay para que la pestaña cargue
-        Future.delayed(const Duration(seconds: 3), () => html.Url.revokeObjectUrl(url));
+        // En web: abrir directamente en nueva pestaña (usando el servicio condicional)
+        web_service.openInteractiveMapWeb(htmlContent);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("🗺️ Plano interactivo abierto en nueva pestaña")),
@@ -2959,13 +2994,8 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
   Future<void> _saveAndShareFile(List<int> bytes, String fileName, String mimeType, String subject, String extension) async {
     try {
       if (kIsWeb) {
-        // En web: descarga directa desde el browser
-        final blob = html.Blob([bytes], mimeType);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        (html.AnchorElement(href: url)
-          ..setAttribute('download', fileName)
-          ..click());
-        html.Url.revokeObjectUrl(url);
+        // En web: descarga directa desde el browser (usando el servicio condicional)
+        web_service.downloadFileWeb(bytes, fileName);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("✅ $subject descargado")),
