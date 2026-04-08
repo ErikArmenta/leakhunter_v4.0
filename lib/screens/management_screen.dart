@@ -808,21 +808,29 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
       innerContent = Center(child: Text(selectedIsVideo ? "✅ Video listo" : "✅ Foto lista", style: const TextStyle(color: Colors.green)));
     } else if (existingUrl != null) {
       if (existingIsVideo) {
-        innerContent = InkWell(
-          onTap: () => launchUrl(Uri.parse(existingUrl)),
-          child: Container(
-            color: Colors.black87,
-            child: const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.play_circle_fill, color: Colors.blueAccent, size: 36),
-                  SizedBox(height: 4),
-                  Text("Reproducir", style: TextStyle(color: Colors.white, fontSize: 11)),
-                ],
+        innerContent = Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(color: Colors.black87),
+            const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.video_library, color: Colors.grey, size: 28),
+                SizedBox(height: 4),
+                Text("Video Actual", style: TextStyle(color: Colors.white70, fontSize: 11)),
+                Text("(Toca para cambiar)", style: TextStyle(color: Colors.white38, fontSize: 9)),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: const Icon(Icons.play_circle_fill, color: Colors.blueAccent, size: 28),
+                padding: EdgeInsets.zero,
+                onPressed: () => launchUrl(Uri.parse(existingUrl)),
               ),
             ),
-          ),
+          ],
         );
       } else {
         innerContent = ClipRRect(
