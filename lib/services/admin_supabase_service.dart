@@ -4,26 +4,32 @@ import '../config/supabase_config.dart';
 
 /// Servicio de administración que usa Supabase Edge Functions.
 /// La Service Role Key vive en el servidor (Supabase secrets), nunca en el cliente.
+///
+/// IMPORTANTE: supabase_flutter 2.x inyecta el JWT automáticamente en
+/// functions.invoke(). NO agregar headers Authorization manuales.
 class AdminSupabaseService {
   final _client = SupabaseConfig.client;
 
-  /// Helper para construir los headers con el JWT actual del usuario logueado.
-  Map<String, String> get _authHeaders => {
-    'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken ?? ''}',
-  };
+  /// Refresca la sesión para asegurar un JWT válido antes de cada llamada.
+  Future<void> _ensureFreshToken() async {
+    try {
+      await _client.auth.refreshSession();
+    } catch (e) {
+      print('[AdminService] Warning: could not refresh session: $e');
+    }
+  }
 
   Future<List<AppUser>> listUsers() async {
     try {
-      final response = await _client.functions.invoke(
-        'admin-list-users',
-        method: HttpMethod.get,
-        headers: _authHeaders,
-      );
-      final data = response.data as Map<String, dynamic>;
-      final users = data['users'] as List<dynamic>;
+      await _ensureFreshToken();
+
+      final response = await _client.rpc('get_all_users');
+      final users = response as List<dynamic>;
+
+      print('[AdminService] Found ${users.length} users via RPC');
       return users.map((u) => AppUser.fromMap(u as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error listing users: $e');
+      print('[AdminService] ERROR listing users: $e');
       return [];
     }
   }
@@ -35,15 +41,15 @@ class AdminSupabaseService {
     required String name,
   }) async {
     try {
-      final response = await _client.functions.invoke(
-        'admin-create-user',
-        headers: _authHeaders,
-        body: {'email': email, 'password': password, 'role': role, 'name': name},
+      await _ensureFreshToken();
+      final response = await _client.rpc(
+        'admin_create_user',
+        params: {'new_email': email, 'new_password': password, 'new_role': role, 'new_name': name},
       );
-      final data = response.data as Map<String, dynamic>;
-      return data['success'] == true;
+      print('[AdminService] createUser RPC successful');
+      return true;
     } catch (e) {
-      print('Error creating user: $e');
+      print('[AdminService] Error creating user: $e');
       return false;
     }
   }
@@ -55,35 +61,35 @@ class AdminSupabaseService {
     String? name,
   }) async {
     try {
-      final response = await _client.functions.invoke(
-        'admin-update-user',
-        headers: _authHeaders,
-        body: {
-          'id': id,
-          if (password != null && password.isNotEmpty) 'password': password,
-          if (role != null) 'role': role,
-          if (name != null) 'name': name,
+      await _ensureFreshToken();
+      final response = await _client.rpc(
+        'admin_update_user',
+        params: {
+          'target_user_id': id,
+          if (password != null && password.isNotEmpty) 'new_password': password,
+          if (role != null) 'new_role': role,
+          if (name != null) 'new_name': name,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      return data['success'] == true;
+      print('[AdminService] updateUser RPC successful');
+      return true;
     } catch (e) {
-      print('Error updating user: $e');
+      print('[AdminService] Error updating user: $e');
       return false;
     }
   }
 
   Future<bool> deleteUser(String id) async {
     try {
-      final response = await _client.functions.invoke(
-        'admin-delete-user',
-        headers: _authHeaders,
-        body: {'id': id},
+      await _ensureFreshToken();
+      final response = await _client.rpc(
+        'admin_delete_user',
+        params: {'target_user_id': id},
       );
-      final data = response.data as Map<String, dynamic>;
-      return data['success'] == true;
+      print('[AdminService] deleteUser RPC successful');
+      return true;
     } catch (e) {
-      print('Error deleting user: $e');
+      print('[AdminService] Error deleting user: $e');
       return false;
     }
   }

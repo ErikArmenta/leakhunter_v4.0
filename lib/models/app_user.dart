@@ -29,14 +29,14 @@ class AppUser {
     );
   }
 
-  /// Parsea la respuesta JSON que retorna la Edge Function admin-list-users
+  /// Parsea la respuesta JSON que retorna la Edge Function admin-list-users o de la función RPC
   factory AppUser.fromMap(Map<String, dynamic> map) {
     final metadata = map['user_metadata'] as Map<String, dynamic>? ?? {};
     return AppUser(
       id: map['id'] as String? ?? '',
       email: map['email'] as String? ?? '',
-      role: metadata['role'] as String? ?? 'Inspector',
-      name: metadata['full_name'] as String? ?? 'Sin nombre',
+      role: metadata['role'] as String? ?? map['role'] as String? ?? 'Inspector',
+      name: metadata['full_name'] as String? ?? map['name'] as String? ?? 'Sin nombre',
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
       lastSignInAt: map['last_sign_in_at'] != null ? DateTime.tryParse(map['last_sign_in_at']) : null,
     );

@@ -168,6 +168,16 @@ class FugaDetailMapScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (fuga.comentarios.isNotEmpty && fuga.comentarios != 'N/A') ...[
+                      const SizedBox(height: 12),
+                      const Divider(color: Colors.white12, height: 1),
+                      const SizedBox(height: 8),
+                      Text(
+                        "💬 Comentarios: ${fuga.comentarios}",
+                        style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     if (fuga.fotoDeteccion != null || fuga.fotoReparacion != null) ...[
                       const Divider(color: Colors.white24, height: 24),
                       Row(

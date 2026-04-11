@@ -2400,7 +2400,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                      mainAxisAlignment: pw.MainAxisAlignment.center,
                      children: [
                        pw.Text(
-                         "REPORTE EJECUTIVO",
+                         "EXECUTIVE REPORT",
                          style: pw.TextStyle(
                            fontSize: 36,
                            fontWeight: pw.FontWeight.bold,
@@ -2410,7 +2410,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                        ),
                        pw.SizedBox(height: 10),
                        pw.Text(
-                         "AUDITORÍA Y GESTIÓN DE FUGAS INDUSTRIALES",
+                         "INDUSTRIAL LEAK AUDIT AND MANAGEMENT",
                          style: pw.TextStyle(
                            fontSize: 14,
                            color: colorTexto,
@@ -2426,7 +2426,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                            border: pw.Border.all(color: colorSecundario, width: 1.5),
                          ),
                          child: pw.Text(
-                           "Fecha de emisión: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+                           "Issue Date: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
                            style: pw.TextStyle(fontSize: 14, color: colorTexto, fontWeight: pw.FontWeight.bold),
                          )
                        ),
@@ -2438,7 +2438,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                    child: pw.Column(
                      children: [
                        pw.Text("Leak Hunter Digital Twin v4.1", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 12)),
-                       pw.Text("Reporte automatizado generado para uso directivo", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 10)),
+                       pw.Text("Automated report generated for executive use", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 10)),
                      ]
                    )
                  ),
@@ -2478,7 +2478,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
           return [
             pw.Header(
               level: 1,
-              child: pw.Text("1. Resumen Ejecutivo (KPI)", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+              child: pw.Text("1. Executive Summary (KPI)", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
               decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
             ),
             pw.SizedBox(height: 15),
@@ -2486,17 +2486,17 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _buildKPIBox("Hallazgos\nTotales", "${fugas.length}", PdfColors.blueGrey700),
-                _buildKPIBox("Impacto Económico", _formatCurrency(totalImpact), PdfColors.red700),
-                _buildKPIBox("Fugas\nReparadas", "$reparadas", PdfColors.green700),
-                _buildKPIBox("Eficiencia\nGlobal", "$eficiencia%", colorSecundario),
+                _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700),
+                _buildKPIBox("Economic Impact", _formatCurrency(totalImpact), PdfColors.red700),
+                _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700),
+                _buildKPIBox("Global\nEfficiency", "$eficiencia%", colorSecundario),
               ]
             ),
             pw.SizedBox(height: 30),
 
             pw.Header(
               level: 1,
-              child: pw.Text("2. Gráficos de Análisis", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+              child: pw.Text("2. Analysis Charts", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
               decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
             ),
             pw.SizedBox(height: 15),
@@ -2508,7 +2508,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Text("Estado Actual", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
+                      pw.Text("Current Status", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
                       pw.SizedBox(height: 10),
                       pw.Container(
                         height: 120,
@@ -2527,9 +2527,9 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                         runSpacing: 5,
                         alignment: pw.WrapAlignment.center,
                         children: [
-                           _buildPdfLegendItem('Dañadas ($danadas)', PdfColor.fromHex('#F44336')),
-                           _buildPdfLegendItem('Proc. ($enProceso)', PdfColor.fromHex('#FF9800')),
-                           _buildPdfLegendItem('Reparadas ($reparadas)', PdfColor.fromHex('#4CAF50')),
+                           _buildPdfLegendItem('Damaged ($danadas)', PdfColor.fromHex('#F44336')),
+                           _buildPdfLegendItem('In process ($enProceso)', PdfColor.fromHex('#FF9800')),
+                           _buildPdfLegendItem('Repaired ($reparadas)', PdfColor.fromHex('#4CAF50')),
                         ]
                       )
                     ]
@@ -2540,7 +2540,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Text("Severidad de Fugas", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
+                      pw.Text("Leak Severity", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
                       pw.SizedBox(height: 10),
                       pw.Container(
                         height: 120,
@@ -2559,9 +2559,9 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                         runSpacing: 5,
                         alignment: pw.WrapAlignment.center,
                         children: [
-                           _buildPdfLegendItem('Baja ($bajaCount)', PdfColor.fromHex('#8BC34A')),
-                           _buildPdfLegendItem('Media ($mediaCount)', PdfColor.fromHex('#FFC107')),
-                           _buildPdfLegendItem('Alta ($altaCount)', PdfColor.fromHex('#F44336')),
+                           _buildPdfLegendItem('Low ($bajaCount)', PdfColor.fromHex('#8BC34A')),
+                           _buildPdfLegendItem('Medium ($mediaCount)', PdfColor.fromHex('#FFC107')),
+                           _buildPdfLegendItem('High ($altaCount)', PdfColor.fromHex('#F44336')),
                         ]
                       )
                     ]
@@ -2574,7 +2574,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
             
             pw.Header(
               level: 1,
-              child: pw.Text("3. Desglose de Puntos Críticos", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+              child: pw.Text("3. Critical Points Breakdown", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
               decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
             ),
             pw.SizedBox(height: 15),
@@ -2596,7 +2596,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               cellStyle: const pw.TextStyle(fontSize: 8),
               oddRowDecoration: pw.BoxDecoration(color: colorFondoGris),
               data: <List<String>>[
-                <String>['ID', 'Área', 'Máquina', 'Tipo', 'Severidad', 'Costo/Año', 'Estado'],
+                <String>['ID', 'Area', 'Machine', 'Type', 'Severity', 'Cost/Year', 'Status'],
                 ...fugas.take(40).map((f) => [
                   f.id.toString(),
                   f.area,
@@ -2659,7 +2659,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
             return [
               pw.Header(
                 level: 1,
-                child: pw.Text("4. Anexo: Fichas Técnicas Fotográficas", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+                child: pw.Text("4. Annex: Photographic Technical Sheets", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
                 decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
               ),
               pw.SizedBox(height: 15),
@@ -2690,8 +2690,8 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                         child: pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
-                            pw.Text("Ficha: ${f.id} | Máquina: ${f.idMaquina}", style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
-                            pw.Text("Área: ${f.area}", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
+                            pw.Text("Sheet: ${f.id} | Machine: ${f.idMaquina}", style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
+                            pw.Text("Area: ${f.area}", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
                           ]
                         )
                       ),
@@ -2699,14 +2699,14 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
-                          pw.Text("Categoría: ${f.tipoFuga} (${f.severidad})", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
+                          pw.Text("Category: ${f.tipoFuga} (${f.severidad})", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
                           pw.Text("Status: ${f.estado}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: f.estado == 'Completada' ? PdfColors.green700 : PdfColors.orange700)),
-                          pw.Text("Impacto: ${_formatCurrency(f.costoAnual.toDouble())}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+                          pw.Text("Impact: ${_formatCurrency(f.costoAnual.toDouble())}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
                         ]
                       ),
                       if (f.comentarios.isNotEmpty) ...[
                         pw.SizedBox(height: 8),
-                        pw.Text("Comentarios: ${f.comentarios}", style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                        pw.Text("Comments: ${f.comentarios}", style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
                       ],
                       pw.SizedBox(height: 12),
                       pw.Row(
@@ -2716,7 +2716,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                             pw.Expanded(
                               child: pw.Column(
                                 children: [
-                                  pw.Text("Evidencia de Detección", style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                                  pw.Text("Detection Evidence", style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                                   pw.SizedBox(height: 4),
                                   pw.Container(
                                     height: 180,
@@ -2733,7 +2733,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                             pw.Expanded(
                               child: pw.Column(
                                 children: [
-                                  pw.Text("Evidencia de Reparación", style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                                  pw.Text("Repair Evidence", style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                                   pw.SizedBox(height: 4),
                                   pw.Container(
                                     height: 180,
