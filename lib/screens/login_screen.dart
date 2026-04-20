@@ -99,7 +99,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                       const Text('🏭💧 ', style: TextStyle(fontSize: 40)),
                       Flexible(
                         child: Text(
-                          'Leak Hunter Digital Twin v4.1',
+                          'Leak Hunter Digital Twin v4.2',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,

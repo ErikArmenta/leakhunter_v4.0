@@ -21,6 +21,12 @@ class DrillDownDialog extends StatelessWidget {
     this.onExportExcel,
   });
 
+  String _formatCurrency(double amount) {
+    RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    String mathFunc(Match match) => '${match[1]},';
+    return '\$' + amount.toStringAsFixed(0).replaceAllMapped(reg, mathFunc);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -83,7 +89,7 @@ class DrillDownDialog extends StatelessWidget {
 
     for (var fuga in fugas) {
       severityCount[fuga.severidad] = (severityCount[fuga.severidad] ?? 0) + 1;
-      totalCost += fuga.costoAnual;
+      totalCost += fuga.costoActual;
     }
 
     return Column(
@@ -91,7 +97,7 @@ class DrillDownDialog extends StatelessWidget {
       children: [
         _buildInfoCard("Total fugas", fugas.length.toString(), Icons.bug_report),
         const SizedBox(height: 16),
-        _buildInfoCard("Impacto económico", "\$${totalCost.toStringAsFixed(0)}", Icons.attach_money),
+        _buildInfoCard("Impacto económico", _formatCurrency(totalCost), Icons.attach_money),
         const SizedBox(height: 24),
         const Text(
           "Desglose por severidad:",
@@ -134,7 +140,7 @@ class DrillDownDialog extends StatelessWidget {
       );
     }
 
-    double totalCost = fugas.fold(0.0, (sum, f) => sum + f.costoAnual);
+    double totalCost = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
 
     return Column(
       children: [
@@ -155,7 +161,7 @@ class DrillDownDialog extends StatelessWidget {
                 style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
               ),
               Text(
-                "Impacto: \$${totalCost.toStringAsFixed(0)}",
+                "Impacto: ${_formatCurrency(totalCost)}",
                 style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold),
               ),
             ],
@@ -222,7 +228,7 @@ class DrillDownDialog extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(
-                          "\$${fuga.costoAnual.toStringAsFixed(0)}",
+                          _formatCurrency(fuga.costoActual),
                           style: const TextStyle(
                             color: Colors.orangeAccent,
                             fontSize: 14,

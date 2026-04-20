@@ -256,7 +256,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
   Widget _buildSummaryCards(List<Fuga> fugas) {
     final totalFugas = fugas.length;
-    final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoAnual);
+    final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
     final reparadas = fugas.where((f) => f.estado == 'Completada').length;
     final efficiency = totalFugas > 0
         ? (reparadas / totalFugas * 100).toStringAsFixed(1)
@@ -785,7 +785,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
     Map<String, double> impactMap = {};
     for (var f in fugas) {
-      impactMap[f.categoria] = (impactMap[f.categoria] ?? 0) + f.costoAnual;
+      impactMap[f.categoria] = (impactMap[f.categoria] ?? 0) + f.costoActual;
     }
 
     var sortedEntries = impactMap.entries.toList()
@@ -2102,10 +2102,10 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
   }
 
   Widget _buildTopSectors(List<Fuga> fugas) {
-    final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoAnual);
+    final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
     Map<String, double> zoneImpact = {};
     for (var f in fugas) {
-      zoneImpact[f.area] = (zoneImpact[f.area] ?? 0) + f.costoAnual;
+      zoneImpact[f.area] = (zoneImpact[f.area] ?? 0) + f.costoActual;
     }
     var sortedZones = zoneImpact.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -2226,7 +2226,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       child: const Column(
         children: [
           Text(
-            "🏭💧 Leak Hunter Digital Twin v4.0",
+            "🏭💧 Leak Hunter Digital Twin v4.2",
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -2306,7 +2306,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
         xl.TextCellValue(f.severidad),
         xl.TextCellValue(f.categoria),
         xl.TextCellValue(f.lMin.toStringAsFixed(2)),
-        xl.TextCellValue(f.costoAnual.toStringAsFixed(2)),
+        xl.TextCellValue(f.costoActual.toStringAsFixed(2)),
         xl.TextCellValue(f.estado),
         xl.TextCellValue(f.comentarios),
       ]);
@@ -2331,7 +2331,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     );
 
     final pdf = pw.Document();
-    final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoAnual);
+    final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
     final reparadas = fugas.where((f) => f.estado == 'Completada').length;
     final enProceso = fugas.where((f) => f.estado == 'En proceso de reparar').length;
     final danadas = fugas.where((f) => f.estado == 'Dañada').length;
@@ -2437,7 +2437,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                    bottom: 50, left: 0, right: 0,
                    child: pw.Column(
                      children: [
-                       pw.Text("Leak Hunter Digital Twin v4.1", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 12)),
+                       pw.Text("Leak Hunter Digital Twin v4.2", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 12)),
                        pw.Text("Automated report generated for executive use", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 10)),
                      ]
                    )
@@ -2474,6 +2474,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
           final bajaCount = fugas.where((f) => f.severidad == 'Baja').length;
           final mediaCount = fugas.where((f) => f.severidad == 'Media').length;
           final altaCount = fugas.where((f) => f.severidad == 'Alta').length;
+          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + f.costoActual);
 
           return [
             pw.Header(
@@ -2486,13 +2487,20 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700),
-                _buildKPIBox("Economic Impact", _formatCurrency(totalImpact), PdfColors.red700),
-                _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700),
-                _buildKPIBox("Global\nEfficiency", "$eficiencia%", colorSecundario),
+                pw.Expanded(child: _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700)),
+                pw.SizedBox(width: 8),
+                pw.Expanded(child: _buildKPIBox("Economic\nImpact", _formatCurrency(totalImpact), PdfColors.red700)),
+                pw.SizedBox(width: 8),
+                pw.Expanded(child: _buildKPIBox("Savings\nGenerated", _formatCurrency(ahorroGenerado), PdfColors.green700)),
+                pw.SizedBox(width: 8),
+                pw.Expanded(child: _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700)),
+                pw.SizedBox(width: 8),
+                pw.Expanded(child: _buildKPIBox("Global\nEfficiency", "$eficiencia%", colorSecundario)),
               ]
             ),
-            pw.SizedBox(height: 30),
+            pw.SizedBox(height: 6),
+            pw.Text("* Note: If a leak's impact is \$0, it indicates it was repaired and closed on the exact same day of its detection.", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 8, fontStyle: pw.FontStyle.italic)),
+            pw.SizedBox(height: 25),
 
             pw.Header(
               level: 1,
@@ -2603,7 +2611,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                   f.idMaquina,
                   f.tipoFuga,
                   f.severidad,
-                  _formatCurrency(f.costoAnual.toDouble()),
+                  _formatCurrency(f.costoActual.toDouble()),
                   f.estado,
                 ]),
               ],
@@ -2701,7 +2709,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                         children: [
                           pw.Text("Category: ${f.tipoFuga} (${f.severidad})", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
                           pw.Text("Status: ${f.estado}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: f.estado == 'Completada' ? PdfColors.green700 : PdfColors.orange700)),
-                          pw.Text("Impact: ${_formatCurrency(f.costoAnual.toDouble())}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+                          pw.Text("Impact: ${_formatCurrency(f.costoActual.toDouble())}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
                         ]
                       ),
                       if (f.comentarios.isNotEmpty) ...[
@@ -2771,7 +2779,6 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
 
   pw.Widget _buildKPIBox(String title, String value, PdfColor color) {
     return pw.Container(
-      width: 100,
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
         color: PdfColors.white,
@@ -2884,7 +2891,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                <tr><td style="color: #8b949e; padding: 3px 0;">Estado:</td><td style="padding: 3px 0; color: white;">$cleanEstado</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Categoría:</td><td style="padding: 3px 0; color: white;">$cleanCateg</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Caudal:</td><td style="padding: 3px 0; color: white;">\${${f.lMin}} l/min</td></tr>
-               <tr><td style="color: #8b949e; padding: 3px 0;">Costo/Año:</td><td style="color: #FF4B4B; font-weight: bold; padding: 3px 0;">\\\$\${${f.costoAnual.toStringAsFixed(0)}} USD</td></tr>
+               <tr><td style="color: #8b949e; padding: 3px 0;">Impacto Acum:</td><td style="color: #FF4B4B; font-weight: bold; padding: 3px 0;">\\\$\${${f.costoActual.toStringAsFixed(0)}} USD</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Severidad:</td><td style="color: $cleanSevColorHex; font-weight: bold; padding: 3px 0;">$cleanSev</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Fechas:</td><td style="padding: 3px 0; color: white;">$cleanFechas</td></tr>
              </table>

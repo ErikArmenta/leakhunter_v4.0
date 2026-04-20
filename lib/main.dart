@@ -57,7 +57,7 @@ class LeakHunterApp extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     return MaterialApp(
-      title: 'Leak Hunter v4.0',
+      title: 'Leak Hunter v4.2',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: authState.user == null ? const LoginScreen() : const MainScreen(),

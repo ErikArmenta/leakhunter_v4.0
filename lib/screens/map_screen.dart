@@ -8,6 +8,7 @@ import '../models/fuga.dart';
 import '../widgets/media_thumbnail.dart';
 import '../widgets/fullscreen_image_viewer.dart';
 import '../widgets/audit_timeline_widget.dart';
+import '../widgets/drill_down_dialog.dart';
 import '../services/export_service.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -23,7 +24,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   final double originalHeight = 16715 / 256 / 32; // 2.0385
 
   bool _isMetricsVisible = true; 
-  bool _isHeatmapVisible = false;
 
   // Dimensiones del PlanoHanon25K.png (Nuevo Mapa)
   final double ancho_real = 25600.0;
@@ -77,7 +77,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     );
                   },
                 ),
-                if (_isHeatmapVisible) _buildHeatmapLayer(filteredFugas),
                 _buildInspectionZonesLayer(filteredFugas),
                 _buildMarkersLayer(filteredFugas),
               ],
@@ -116,15 +115,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
           Icons.visibility_off,
           _isMetricsVisible ? "Ocultar Métricas" : "Mostrar Métricas",
           () => setState(() => _isMetricsVisible = !_isMetricsVisible),
-        ),
-        const SizedBox(height: 8),
-        _buildToggle(
-          _isHeatmapVisible,
-          Icons.whatshot,
-          Icons.whatshot,
-          _isHeatmapVisible ? "Ocultar Heatmap" : "Zonas Calientes",
-          () => setState(() => _isHeatmapVisible = !_isHeatmapVisible),
-          baseColor: _isHeatmapVisible ? Colors.redAccent.withOpacity(0.9) : const Color(0xFF161a22).withOpacity(0.9),
         ),
       ]
     );
@@ -170,16 +160,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Widget _buildMetricsRow(List<Fuga> fugas) {
     int total = fugas.length;
     int highPriority = fugas.where((f) => f.severidad == 'Alta').length;
-    double totalImpact = fugas.fold(0, (sum, f) => sum + f.costoAnual);
+    double totalImpact = fugas.fold(0, (sum, f) => sum + f.costoActual);
 
     final completadas = fugas.where((f) => f.estado == 'Completada').toList();
     double savingGenerated = completadas.fold(
       0,
-      (sum, f) => sum + f.costoAnual,
+      (sum, f) => sum + f.costoActual,
     );
 
     final pendientes = fugas.where((f) => f.estado != 'Completada').toList();
-    double toMitigate = pendientes.fold(0, (sum, f) => sum + f.costoAnual);
+    double toMitigate = pendientes.fold(0, (sum, f) => sum + f.costoActual);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -189,7 +179,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
           _MetricCard(
             title: "Hallazgos Totales", 
             value: "$total",
-            onTap: () => ExportService.exportFilteredExcel(context, fugas, 'Todos_Los_Hallazgos'),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => DrillDownDialog(
+                  title: 'Todos Los Hallazgos',
+                  fugas: fugas,
+                  type: 'severity',
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, fugas, 'Todos_Los_Hallazgos'),
+                )
+              );
+            },
           ),
           _MetricCard(
             title: "🚨 Prioridad Alta",
@@ -197,13 +197,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
             valueColor: const Color(0xFFFF4B4B),
             onTap: () {
               final subset = fugas.where((f) => f.severidad == 'Alta').toList();
-              ExportService.exportFilteredExcel(context, subset, 'Prioridad_Alta');
+              showDialog(
+                context: context,
+                builder: (_) => DrillDownDialog(
+                  title: 'Prioridad Alta',
+                  fugas: subset,
+                  type: 'severity',
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, subset, 'Prioridad_Alta'),
+                )
+              );
             },
           ),
           _MetricCard(
             title: "💰 Impacto Total",
             value: "${_formatCurrency(totalImpact)} USD",
-            onTap: () => ExportService.exportFilteredExcel(context, fugas, 'Impacto_Total'),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => DrillDownDialog(
+                  title: 'Impacto Total',
+                  fugas: fugas,
+                  type: 'list',
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, fugas, 'Impacto_Total'),
+                )
+              );
+            },
           ),
           _MetricCard(
             title: "✅ Ahorro Generado",
@@ -211,7 +229,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
             subtitle: "¡Buen trabajo!",
             subtitleColor: const Color(0xFF28A745),
             onTap: () {
-              ExportService.exportFilteredExcel(context, completadas, 'Ahorro_Generado_Completadas');
+              showDialog(
+                context: context,
+                builder: (_) => DrillDownDialog(
+                  title: 'Ahorro Generado (Completadas)',
+                  fugas: completadas,
+                  type: 'list',
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, completadas, 'Ahorro_Generado_Completadas'),
+                )
+              );
             },
           ),
           _MetricCard(
@@ -220,7 +246,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
             subtitle: "-${pendientes.length} fugas",
             subtitleColor: const Color(0xFFFF4B4B),
             onTap: () {
-              ExportService.exportFilteredExcel(context, pendientes, 'Por_Mitigar_Pendientes');
+              showDialog(
+                context: context,
+                builder: (_) => DrillDownDialog(
+                  title: 'Por Mitigar (Pendientes)',
+                  fugas: pendientes,
+                  type: 'list',
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, pendientes, 'Por_Mitigar_Pendientes'),
+                )
+              );
             },
           ),
         ],
@@ -256,40 +290,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     return PolygonLayer(polygons: polygons);
   }
 
-  CircleLayer _buildHeatmapLayer(List<Fuga> fugas) {
-    final circles = <CircleMarker>[];
-    for (var f in fugas) {
-      if (f.costoAnual > 0) {
-        final cx = (f.x1 + f.x2) / 2;
-        final cy = (f.y1 + f.y2) / 2;
-        final centerMap = storedToMap(cx, cy);
-
-        // Nivel de intensidad térmica basado en dólares
-        double radius = 40;
-        Color baseColor = Colors.yellow.withOpacity(0.2);
-        
-        if (f.costoAnual > 5000) {
-          radius = 120;
-          baseColor = Colors.red.withOpacity(0.4);
-        } else if (f.costoAnual > 1000) {
-          radius = 80;
-          baseColor = Colors.orange.withOpacity(0.3);
-        }
-
-        circles.add(
-          CircleMarker(
-            point: centerMap,
-            radius: radius,
-            useRadiusInMeter: false,
-            color: baseColor,
-            borderColor: Colors.transparent,
-            borderStrokeWidth: 0,
-          )
-        );
-      }
-    }
-    return CircleLayer(circles: circles);
-  }
 
   MarkerLayer _buildMarkersLayer(List<Fuga> fugas) {
     final markers = <Marker>[];
@@ -536,8 +536,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 _buildDarkRow("Categoría:", f.categoria),
                 _buildDarkRow("Caudal:", "${f.lMin} l/min"),
                 _buildDarkRow(
-                  "Costo/Año:",
-                  "${_formatCurrency(f.costoAnual.toDouble())} USD",
+                  "Impacto Acum:",
+                  "${_formatCurrency(f.costoActual.toDouble())} USD",
                   valueColor: const Color(0xFFFF4B4B),
                 ),
                 _buildDarkRow("Severidad:", f.severidad, valueColor: colorSev),

@@ -1432,9 +1432,18 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                 return; // Stop update
                               }
 
+                              String finalZona = editZona;
+                              if (editEstado == 'Completada' && f.estado != 'Completada') {
+                                final partes = finalZona.split('-');
+                                if (partes.isNotEmpty) {
+                                  final df = DateFormat('dd/MM/yyyy');
+                                  finalZona = "${partes[0].trim()} - ${df.format(DateTime.now())}";
+                                }
+                              }
+
                               final updated = f.copyWith(
                                 idMaquina: editIdMaquina,
-                                zona: editZona,
+                                zona: finalZona,
                                 area: editArea,
                                 severidad: editSeveridad,
                                 categoria: editCategoria,

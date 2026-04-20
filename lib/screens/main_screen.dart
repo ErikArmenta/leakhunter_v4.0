@@ -377,7 +377,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 16),
                                     child: Text(
-                                      'v4.1',
+                                      'v4.2',
                                       style: TextStyle(
                                         color: Colors.white38,
                                         fontSize: 10,

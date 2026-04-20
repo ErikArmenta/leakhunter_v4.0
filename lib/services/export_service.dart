@@ -26,7 +26,7 @@ class ExportService {
     List<String> headerText = [
       'ID', 'Fecha/Zona', 'Tipo Fuga', 'Área', 'Ubicación', 
       'ID Máquina', 'Severidad', 'Categoría', 'L/min', 
-      'Costo Anual (USD)', 'Estado', 'Comentarios'
+      'Impacto Acum (USD)', 'Estado', 'Comentarios'
     ];
     
     List<xl.CellValue> header = headerText.map((t) => xl.TextCellValue(t)).toList();
@@ -61,7 +61,7 @@ class ExportService {
         xl.TextCellValue(f.severidad),
         xl.TextCellValue(f.categoria),
         xl.TextCellValue(f.lMin.toStringAsFixed(2)),
-        xl.TextCellValue(f.costoAnual.toStringAsFixed(2)),
+        xl.TextCellValue(f.costoActual.toStringAsFixed(2)),
         xl.TextCellValue(f.estado),
         xl.TextCellValue(f.comentarios),
       ]);

@@ -29,6 +29,12 @@ class FugaDetailMapScreen extends StatelessWidget {
     return LatLng(map_y, map_x);
   }
 
+  String _formatCurrency(double amount) {
+    RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    String mathFunc(Match match) => '${match[1]},';
+    return '\$' + amount.toStringAsFixed(0).replaceAllMapped(reg, mathFunc);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cx = (fuga.x1 + fuga.x2) / 2;
@@ -122,7 +128,7 @@ class FugaDetailMapScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Impacto: \$${fuga.costoAnual.toStringAsFixed(0)} USD",
+                          "Impacto Acumulado: ${_formatCurrency(fuga.costoActual)} USD",
                           style: const TextStyle(color: Colors.orangeAccent, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 16),

@@ -126,4 +126,52 @@ class Fuga {
       fotoReparacion: fotoReparacion ?? this.fotoReparacion,
     );
   }
+
+  DateTime? get fechaInicio {
+    try {
+      if (zona.isEmpty) return null;
+      final partsStr = zona.split('-');
+      if (partsStr.isEmpty) return null;
+      final fParts = partsStr[0].trim().split('/');
+      if (fParts.length != 3) return null;
+      return DateTime(int.parse(fParts[2]), int.parse(fParts[1]), int.parse(fParts[0]));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  DateTime? get fechaTermino {
+    try {
+      if (zona.isEmpty) return null;
+      final partsStr = zona.split('-');
+      if (partsStr.length < 2) return null;
+      final fParts = partsStr[1].trim().split('/');
+      if (fParts.length != 3) return null;
+      return DateTime(int.parse(fParts[2]), int.parse(fParts[1]), int.parse(fParts[0]));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  double get costoActual {
+    if (estado == 'Inspección (OK)') return 0.0;
+    
+    final inicio = fechaInicio;
+    if (inicio == null) return 0.0; 
+
+    DateTime fin;
+    if (estado == 'Completada') {
+      fin = fechaTermino ?? DateTime.now();
+    } else {
+      fin = DateTime.now();
+    }
+
+    final inMinutes = fin.difference(inicio).inMinutes;
+    if (inMinutes <= 0) return 0.0;
+
+    const double minutesInYear = 365.0 * 24.0 * 60.0;
+    final double costoPorMinuto = costoAnual / minutesInYear;
+    
+    return costoPorMinuto * inMinutes;
+  }
 }
