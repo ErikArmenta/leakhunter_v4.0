@@ -540,8 +540,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   "${_formatCurrency(f.costoActual.toDouble())} USD",
                   valueColor: const Color(0xFFFF4B4B),
                 ),
+                if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua')
+                  _buildDarkRow(
+                    "Consumo Acum:",
+                    "${f.consumoActualM3.toStringAsFixed(2)} m³",
+                    valueColor: Colors.cyan,
+                  ),
+                if (f.tipoFuga == 'Aire')
+                  _buildDarkRow(
+                    "Consumo Eléctrico:",
+                    "${f.consumoActualKWh.toStringAsFixed(2)} kWh",
+                    valueColor: Colors.yellowAccent,
+                  ),
                 _buildDarkRow("Severidad:", f.severidad, valueColor: colorSev),
-                _buildDarkRow("Fechas:", f.zona),
+                _buildDarkRow("Fechas:", "${f.zona} (${f.diasTranscurridos} días)"),
                 if (f.comentarios.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Container(

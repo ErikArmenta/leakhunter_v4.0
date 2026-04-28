@@ -10,9 +10,17 @@ class AppConstants {
       "Fuga E": {"l_min": "40.1-50", "costo": 1090.0},
     },
     "Helio": {
-      "Fuga A": {"l_min": "0.1-17", "costo": 13200.0},
-      "Fuga B": {"l_min": "17.1-32", "costo": 26400.0},
-      "Fuga C": {"l_min": "33.1-50", "costo": 132000.0},
+      "Fuga A": {"l_min": "1-10", "costo": 182500.0},
+      "Fuga B": {"l_min": "10-20", "costo": 365000.0},
+      "Fuga C": {"l_min": "20-40", "costo": 730000.0},
+      "Fuga D": {"l_min": "40-60", "costo": 1095000.0},
+    },
+    "Agua": {
+      "Fuga A": {"l_min": "0.01-0.05", "costo": 114.0},
+      "Fuga B": {"l_min": "0.05-0.10", "costo": 228.0},
+      "Fuga C": {"l_min": "0.10-0.20", "costo": 456.0},
+      "Fuga D": {"l_min": "0.20-1.50", "costo": 3400.0},
+      "Fuga E": {"l_min": "1.50-3.00", "costo": 6840.0},
     },
     "Aceite": {
       "Fuga A": {"l_min": "0.002-0.004", "costo": 2181.17},

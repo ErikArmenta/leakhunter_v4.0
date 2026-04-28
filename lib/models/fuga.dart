@@ -174,4 +174,48 @@ class Fuga {
     
     return costoPorMinuto * inMinutes;
   }
+
+  double get consumoActualM3 {
+    if (estado == 'Inspección (OK)') return 0.0;
+    
+    final inicio = fechaInicio;
+    if (inicio == null) return 0.0; 
+
+    DateTime fin;
+    if (estado == 'Completada') {
+      fin = fechaTermino ?? DateTime.now();
+    } else {
+      fin = DateTime.now();
+    }
+
+    final inMinutes = fin.difference(inicio).inMinutes;
+    if (inMinutes <= 0) return 0.0;
+
+    // lMin is Liters per minute. 1000 Liters = 1 m^3
+    return (lMin / 1000.0) * inMinutes;
+  }
+
+  double get consumoActualKWh {
+    if (estado == 'Inspección (OK)' || costoActual <= 0.0) return 0.0;
+    
+    // Convertir USD a MXN (Tipo de cambio: 19)
+    final costoMXN = costoActual * 19.0;
+    // Calcular kWh (Precio por kWh: 2.4 MXN)
+    return costoMXN / 2.4;
+  }
+
+  int get diasTranscurridos {
+    final inicio = fechaInicio;
+    if (inicio == null) return 0;
+    
+    DateTime fin;
+    if (estado == 'Completada') {
+      fin = fechaTermino ?? DateTime.now();
+    } else {
+      fin = DateTime.now();
+    }
+    
+    final days = fin.difference(inicio).inDays;
+    return days < 0 ? 0 : days;
+  }
 }

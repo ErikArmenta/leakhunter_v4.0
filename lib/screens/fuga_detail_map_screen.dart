@@ -124,6 +124,11 @@ class FugaDetailMapScreen extends StatelessWidget {
                       style: const TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 8),
+                    Text(
+                      "Fechas: ${fuga.zona} (${fuga.diasTranscurridos} días)",
+                      style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -174,6 +179,20 @@ class FugaDetailMapScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (fuga.tipoFuga == 'Helio' || fuga.tipoFuga == 'Agua') ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        "Consumo Acumulado: ${fuga.consumoActualM3.toStringAsFixed(2)} m³",
+                        style: const TextStyle(color: Colors.cyan, fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                    if (fuga.tipoFuga == 'Aire') ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        "Consumo Eléctrico: ${fuga.consumoActualKWh.toStringAsFixed(2)} kWh",
+                        style: const TextStyle(color: Colors.yellowAccent, fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                     if (fuga.comentarios.isNotEmpty && fuga.comentarios != 'N/A') ...[
                       const SizedBox(height: 12),
                       const Divider(color: Colors.white12, height: 1),
