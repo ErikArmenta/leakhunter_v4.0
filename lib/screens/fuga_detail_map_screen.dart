@@ -179,11 +179,18 @@ class FugaDetailMapScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (fuga.tipoFuga == 'Helio' || fuga.tipoFuga == 'Agua') ...[
+                    if (fuga.tipoFuga == 'Helio' || fuga.tipoFuga == 'Agua' || fuga.tipoFuga == 'Gas Natural') ...[
                       const SizedBox(height: 8),
                       Text(
                         "Consumo Acumulado: ${fuga.consumoActualM3.toStringAsFixed(2)} m³",
                         style: const TextStyle(color: Colors.cyan, fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                    if (fuga.tipoFuga == 'Aceite') ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        "Consumo Acumulado: ${fuga.consumoActualLitros.toStringAsFixed(2)} Lts",
+                        style: const TextStyle(color: Colors.orangeAccent, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],
                     if (fuga.tipoFuga == 'Aire') ...[

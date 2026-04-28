@@ -540,11 +540,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   "${_formatCurrency(f.costoActual.toDouble())} USD",
                   valueColor: const Color(0xFFFF4B4B),
                 ),
-                if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua')
+                if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural')
                   _buildDarkRow(
                     "Consumo Acum:",
                     "${f.consumoActualM3.toStringAsFixed(2)} m³",
                     valueColor: Colors.cyan,
+                  ),
+                if (f.tipoFuga == 'Aceite')
+                  _buildDarkRow(
+                    "Consumo Acum:",
+                    "${f.consumoActualLitros.toStringAsFixed(2)} Lts",
+                    valueColor: Colors.orangeAccent,
                   ),
                 if (f.tipoFuga == 'Aire')
                   _buildDarkRow(

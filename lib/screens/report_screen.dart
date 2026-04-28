@@ -257,6 +257,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   Widget _buildSummaryCards(List<Fuga> fugas) {
     final totalFugas = fugas.length;
     final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
+    final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + f.costoActual);
     final reparadas = fugas.where((f) => f.estado == 'Completada').length;
     final efficiency = totalFugas > 0
         ? (reparadas / totalFugas * 100).toStringAsFixed(1)
@@ -269,19 +270,25 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       children: [
         _buildKPICard(
           "Hallazgos",
-          totalFugas.toString(),
+          totalFugas.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},'),
           Icons.search,
           Colors.blueAccent,
         ),
         _buildKPICard(
           "Impacto Total",
-          "\$${totalImpact.toStringAsFixed(0)}",
+          _formatCurrency(totalImpact),
           Icons.attach_money,
           Colors.redAccent,
         ),
         _buildKPICard(
+          "Ahorro Generado",
+          _formatCurrency(ahorroGenerado),
+          Icons.savings,
+          Colors.green,
+        ),
+        _buildKPICard(
           "Reparaciones",
-          reparadas.toString(),
+          reparadas.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},'),
           Icons.check_circle_outline,
           Colors.greenAccent,
         ),
@@ -2269,7 +2276,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     List<String> headerText = [
       'ID', 'Fecha/Zona', 'Tipo Fuga', 'Área', 'Ubicación', 
       'ID Máquina', 'Severidad', 'Categoría', 'L/min', 
-      'Costo Anual (USD)', 'Estado', 'Comentarios'
+      'Costo Anual (USD)', 'Consumo Acumulado', 'Estado', 'Comentarios'
     ];
     
     List<xl.CellValue> header = headerText.map((t) => xl.TextCellValue(t)).toList();
@@ -2292,10 +2299,20 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     sheetObject.setColumnWidth(7, 20.0); // Categoría
     sheetObject.setColumnWidth(8, 12.0); // L/min
     sheetObject.setColumnWidth(9, 20.0); // Costo Anual
-    sheetObject.setColumnWidth(10, 20.0); // Estado
-    sheetObject.setColumnWidth(11, 45.0); // Comentarios
+    sheetObject.setColumnWidth(10, 20.0); // Consumo Acumulado
+    sheetObject.setColumnWidth(11, 20.0); // Estado
+    sheetObject.setColumnWidth(12, 45.0); // Comentarios
 
     for (var f in fugas) {
+      String consumoAcumStr = '';
+      if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural') {
+        consumoAcumStr = '${f.consumoActualM3.toStringAsFixed(2)} m³';
+      } else if (f.tipoFuga == 'Aceite') {
+        consumoAcumStr = '${f.consumoActualLitros.toStringAsFixed(2)} Lts';
+      } else if (f.tipoFuga == 'Aire') {
+        consumoAcumStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
+      }
+
       sheetObject.appendRow([
         xl.TextCellValue(f.id?.toString() ?? '0'),
         xl.TextCellValue(f.zona),
@@ -2307,6 +2324,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
         xl.TextCellValue(f.categoria),
         xl.TextCellValue(f.lMin.toStringAsFixed(2)),
         xl.TextCellValue(f.costoActual.toStringAsFixed(2)),
+        xl.TextCellValue(consumoAcumStr),
         xl.TextCellValue(f.estado),
         xl.TextCellValue(f.comentarios),
       ]);
@@ -2595,7 +2613,8 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                 3: const pw.FlexColumnWidth(1.5),
                 4: const pw.FlexColumnWidth(1.2),
                 5: const pw.FlexColumnWidth(1.5),
-                6: const pw.FlexColumnWidth(1.2),
+                6: const pw.FlexColumnWidth(1.5),
+                7: const pw.FlexColumnWidth(1.2),
               },
               headerAlignment: pw.Alignment.centerLeft,
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),
@@ -2604,16 +2623,27 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               cellStyle: const pw.TextStyle(fontSize: 8),
               oddRowDecoration: pw.BoxDecoration(color: colorFondoGris),
               data: <List<String>>[
-                <String>['ID', 'Area', 'Machine', 'Type', 'Severity', 'Cost/Year', 'Status'],
-                ...fugas.take(40).map((f) => [
-                  f.id.toString(),
-                  f.area,
-                  f.idMaquina,
-                  f.tipoFuga,
-                  f.severidad,
-                  _formatCurrency(f.costoActual.toDouble()),
-                  f.estado,
-                ]),
+                <String>['ID', 'Area', 'Machine', 'Type', 'Severity', 'Cost/Year', 'Consumo Acum', 'Status'],
+                ...fugas.take(40).map((f) {
+                  String consumoStr = '';
+                  if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural') {
+                    consumoStr = '${f.consumoActualM3.toStringAsFixed(2)} m³';
+                  } else if (f.tipoFuga == 'Aceite') {
+                    consumoStr = '${f.consumoActualLitros.toStringAsFixed(2)} Lts';
+                  } else if (f.tipoFuga == 'Aire') {
+                    consumoStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
+                  }
+                  return [
+                    f.id.toString(),
+                    f.area,
+                    f.idMaquina,
+                    f.tipoFuga,
+                    f.severidad,
+                    _formatCurrency(f.costoActual.toDouble()),
+                    consumoStr,
+                    f.estado,
+                  ];
+                }),
               ],
             ),
           ];

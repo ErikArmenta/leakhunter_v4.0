@@ -175,6 +175,25 @@ class Fuga {
     return costoPorMinuto * inMinutes;
   }
 
+  double get consumoActualLitros {
+    if (estado == 'Inspección (OK)') return 0.0;
+    
+    final inicio = fechaInicio;
+    if (inicio == null) return 0.0; 
+
+    DateTime fin;
+    if (estado == 'Completada') {
+      fin = fechaTermino ?? DateTime.now();
+    } else {
+      fin = DateTime.now();
+    }
+
+    final inMinutes = fin.difference(inicio).inMinutes;
+    if (inMinutes <= 0) return 0.0;
+
+    return lMin * inMinutes.toDouble();
+  }
+
   double get consumoActualM3 {
     if (estado == 'Inspección (OK)') return 0.0;
     
