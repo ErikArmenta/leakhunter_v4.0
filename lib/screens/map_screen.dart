@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import '../providers/fugas_provider.dart';
 import '../config/constants.dart';
@@ -291,7 +292,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
 
-  MarkerLayer _buildMarkersLayer(List<Fuga> fugas) {
+  Widget _buildMarkersLayer(List<Fuga> fugas) {
     final markers = <Marker>[];
 
     for (var f in fugas) {
@@ -334,7 +335,42 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
     }
 
-    return MarkerLayer(markers: markers);
+    return MarkerClusterLayerWidget(
+      options: MarkerClusterLayerOptions(
+        maxClusterRadius: 60,
+        size: const Size(45, 45),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(50),
+        maxZoom: 6, // Spiderfy when zooming past 6
+        markers: markers,
+        builder: (context, clusterMarkers) {
+          return Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF1c2128).withOpacity(0.95),
+              border: Border.all(color: const Color(0xFF5271ff), width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                clusterMarkers.length.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildPepoMarker({
