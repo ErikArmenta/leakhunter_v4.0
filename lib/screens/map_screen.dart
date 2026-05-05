@@ -165,8 +165,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final completadas = fugas.where((f) => f.estado == 'Completada').toList();
     double savingGenerated = completadas.fold(
-      0,
-      (sum, f) => sum + f.costoActual,
+      0.0,
+      (sum, f) => sum + (f.costoAnual - f.costoActual),
     );
 
     final pendientes = fugas.where((f) => f.estado != 'Completada').toList();
@@ -225,18 +225,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
           ),
           _MetricCard(
-            title: "✅ Ahorro Generado",
-            value: "${_formatCurrency(savingGenerated)} USD",
-            subtitle: "¡Buen trabajo!",
+            title: "✅ Ahorro Mensual",
+            value: "${_formatCurrency(savingGenerated / 12)} USD",
+            subtitle: "Ahorro real por reparaciones",
             subtitleColor: const Color(0xFF28A745),
             onTap: () {
               showDialog(
                 context: context,
                 builder: (_) => DrillDownDialog(
-                  title: 'Ahorro Generado (Completadas)',
+                  title: 'Ahorro Generado (Mensual)',
                   fugas: completadas,
                   type: 'list',
-                  onExportExcel: () => ExportService.exportFilteredExcel(context, completadas, 'Ahorro_Generado_Completadas'),
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, completadas, 'Ahorro_Generado_Mensual'),
                 )
               );
             },

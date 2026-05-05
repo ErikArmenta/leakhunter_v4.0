@@ -140,7 +140,10 @@ class DrillDownDialog extends StatelessWidget {
       );
     }
 
-    double totalCost = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
+    bool isAhorro = title.contains('Ahorro');
+    double totalValue = isAhorro 
+        ? fugas.fold(0.0, (sum, f) => sum + ((f.costoAnual - f.costoActual) / 12))
+        : fugas.fold(0.0, (sum, f) => sum + f.costoActual);
 
     return Column(
       children: [
@@ -161,8 +164,11 @@ class DrillDownDialog extends StatelessWidget {
                 style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
               ),
               Text(
-                "Impacto: ${_formatCurrency(totalCost)}",
-                style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold),
+                "${isAhorro ? 'Ahorro' : 'Impacto'}: ${_formatCurrency(totalValue)}",
+                style: TextStyle(
+                  color: isAhorro ? Colors.greenAccent : Colors.orangeAccent, 
+                  fontWeight: FontWeight.bold
+                ),
               ),
             ],
           ),
@@ -228,9 +234,9 @@ class DrillDownDialog extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(
-                          _formatCurrency(fuga.costoActual),
-                          style: const TextStyle(
-                            color: Colors.orangeAccent,
+                          _formatCurrency(isAhorro ? ((fuga.costoAnual - fuga.costoActual) / 12) : fuga.costoActual),
+                          style: TextStyle(
+                            color: isAhorro ? Colors.greenAccent : Colors.orangeAccent,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
