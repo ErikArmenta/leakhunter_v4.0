@@ -5,11 +5,35 @@ import '../models/fuga.dart';
 import '../config/constants.dart';
 import '../widgets/fullscreen_image_viewer.dart';
 import '../widgets/audit_timeline_widget.dart';
+import 'dart:async';
 
-class FugaDetailMapScreen extends StatelessWidget {
+class FugaDetailMapScreen extends StatefulWidget {
   final Fuga fuga;
 
   const FugaDetailMapScreen({super.key, required this.fuga});
+
+  @override
+  State<FugaDetailMapScreen> createState() => _FugaDetailMapScreenState();
+}
+
+class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   LatLng storedToMap(double x_stored, double y_stored) {
     final double originalWidth  = 25600 / 256 / 32; // 3.125
@@ -37,19 +61,19 @@ class FugaDetailMapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cx = (fuga.x1 + fuga.x2) / 2;
-    final cy = (fuga.y1 + fuga.y2) / 2;
+    final cx = (widget.fuga.x1 + widget.fuga.x2) / 2;
+    final cy = (widget.fuga.y1 + widget.fuga.y2) / 2;
     final centerMap = storedToMap(cx, cy);
 
-    final statusColor = AppConstants.getStatusColor(fuga.estado, fuga.tipoFuga);
-    final fluidInfo = AppConstants.fluidos[fuga.tipoFuga] ?? {"emoji": "⚠️"};
+    final statusColor = AppConstants.getStatusColor(widget.fuga.estado, widget.fuga.tipoFuga);
+    final fluidInfo = AppConstants.fluidos[widget.fuga.tipoFuga] ?? {"emoji": "⚠️"};
     final emoji = fluidInfo['emoji'] as String;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0d1117),
       appBar: AppBar(
         backgroundColor: const Color(0xFF161a22),
-        title: Text('📍 Fuga: ${fuga.idMaquina}'),
+        title: Text('📍 Fuga: ${widget.fuga.idMaquina}'),
       ),
       body: Stack(
         children: [
@@ -115,17 +139,17 @@ class FugaDetailMapScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "${fuga.tipoFuga} | ${fuga.severidad}",
+                      "${widget.fuga.tipoFuga} | ${widget.fuga.severidad}",
                       style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Área: ${fuga.area} | Estado: ${fuga.estado}",
+                      "Área: ${widget.fuga.area} | Estado: ${widget.fuga.estado}",
                       style: const TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Fechas: ${fuga.zona} (${fuga.diasTranscurridos} días)",
+                      "Fechas: ${widget.fuga.zona} (${widget.fuga.diasTranscurridos} días)",
                       style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 8),
@@ -133,7 +157,7 @@ class FugaDetailMapScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Impacto Acumulado: ${_formatCurrency(fuga.costoActual)} USD",
+                          "Impacto Acumulado: ${_formatCurrency(widget.fuga.costoActual)} USD",
                           style: const TextStyle(color: Colors.orangeAccent, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 16),
@@ -166,7 +190,7 @@ class FugaDetailMapScreen extends StatelessWidget {
                                           controller: scrollController,
                                           child: Padding(
                                             padding: const EdgeInsets.all(16.0),
-                                            child: AuditTimelineWidget(fuga: fuga),
+                                            child: AuditTimelineWidget(fuga: widget.fuga),
                                           ),
                                         ),
                                       ),
@@ -179,47 +203,47 @@ class FugaDetailMapScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (fuga.tipoFuga == 'Helio' || fuga.tipoFuga == 'Agua' || fuga.tipoFuga == 'Gas Natural') ...[
+                    if (widget.fuga.tipoFuga == 'Helio' || widget.fuga.tipoFuga == 'Agua' || widget.fuga.tipoFuga == 'Gas Natural') ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Consumo Acumulado: ${fuga.consumoActualM3.toStringAsFixed(2)} m³",
+                        "Consumo Acumulado: ${widget.fuga.consumoActualM3.toStringAsFixed(2)} m³",
                         style: const TextStyle(color: Colors.cyan, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],
-                    if (fuga.tipoFuga == 'Aceite') ...[
+                    if (widget.fuga.tipoFuga == 'Aceite') ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Consumo Acumulado: ${fuga.consumoActualLitros.toStringAsFixed(2)} Lts",
+                        "Consumo Acumulado: ${widget.fuga.consumoActualLitros.toStringAsFixed(2)} Lts",
                         style: const TextStyle(color: Colors.orangeAccent, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],
-                    if (fuga.tipoFuga == 'Aire') ...[
+                    if (widget.fuga.tipoFuga == 'Aire') ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Consumo Eléctrico: ${fuga.consumoActualKWh.toStringAsFixed(2)} kWh",
+                        "Consumo Eléctrico: ${widget.fuga.consumoActualKWh.toStringAsFixed(2)} kWh",
                         style: const TextStyle(color: Colors.yellowAccent, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],
-                    if (fuga.comentarios.isNotEmpty && fuga.comentarios != 'N/A') ...[
+                    if (widget.fuga.comentarios.isNotEmpty && widget.fuga.comentarios != 'N/A') ...[
                       const SizedBox(height: 12),
                       const Divider(color: Colors.white12, height: 1),
                       const SizedBox(height: 8),
                       Text(
-                        "💬 Comentarios: ${fuga.comentarios}",
+                        "💬 Comentarios: ${widget.fuga.comentarios}",
                         style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic),
                         textAlign: TextAlign.center,
                       ),
                     ],
-                    if (fuga.fotoDeteccion != null || fuga.fotoReparacion != null) ...[
+                    if (widget.fuga.fotoDeteccion != null || widget.fuga.fotoReparacion != null) ...[
                       const Divider(color: Colors.white24, height: 24),
                       Row(
                         children: [
-                          if (fuga.fotoDeteccion != null)
-                            Expanded(child: _buildPhotoCol(context, "Detección", fuga.fotoDeteccion!)),
-                          if (fuga.fotoDeteccion != null && fuga.fotoReparacion != null)
+                          if (widget.fuga.fotoDeteccion != null)
+                            Expanded(child: _buildPhotoCol(context, "Detección", widget.fuga.fotoDeteccion!)),
+                          if (widget.fuga.fotoDeteccion != null && widget.fuga.fotoReparacion != null)
                             const SizedBox(width: 12),
-                          if (fuga.fotoReparacion != null)
-                            Expanded(child: _buildPhotoCol(context, "Reparación", fuga.fotoReparacion!)),
+                          if (widget.fuga.fotoReparacion != null)
+                            Expanded(child: _buildPhotoCol(context, "Reparación", widget.fuga.fotoReparacion!)),
                         ],
                       ),
                     ],

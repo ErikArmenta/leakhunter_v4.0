@@ -6,8 +6,9 @@ import '../screens/fuga_detail_map_screen.dart';
 import 'fullscreen_image_viewer.dart';
 import 'audit_timeline_widget.dart';
 import 'media_thumbnail.dart';
+import 'dart:async';
 
-class DrillDownDialog extends StatelessWidget {
+class DrillDownDialog extends StatefulWidget {
   final String title;
   final List<Fuga> fugas;
   final String type; // 'month', 'severity', 'sector'
@@ -20,6 +21,29 @@ class DrillDownDialog extends StatelessWidget {
     required this.type,
     this.onExportExcel,
   });
+
+  @override
+  State<DrillDownDialog> createState() => _DrillDownDialogState();
+}
+
+class _DrillDownDialogState extends State<DrillDownDialog> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   String _formatCurrency(double amount) {
     RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
@@ -46,7 +70,7 @@ class DrillDownDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -56,11 +80,11 @@ class DrillDownDialog extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (onExportExcel != null)
+                    if (widget.onExportExcel != null)
                       IconButton(
                         icon: const Icon(Icons.file_download, color: Colors.green),
                         tooltip: "Exportar Fugas (Excel)",
-                        onPressed: onExportExcel,
+                        onPressed: widget.onExportExcel,
                       ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white54),
@@ -73,7 +97,7 @@ class DrillDownDialog extends StatelessWidget {
             const Divider(color: Color(0xFF2d323d)),
             const SizedBox(height: 16),
             Expanded(
-              child: type == 'severity'
+              child: widget.type == 'severity'
                   ? _buildSeverityDetail()
                   : _buildFugasList(),
             ),
@@ -87,7 +111,7 @@ class DrillDownDialog extends StatelessWidget {
     final Map<String, int> severityCount = {};
     double totalCost = 0;
 
-    for (var fuga in fugas) {
+    for (var fuga in widget.fugas) {
       severityCount[fuga.severidad] = (severityCount[fuga.severidad] ?? 0) + 1;
       totalCost += fuga.costoActual;
     }
@@ -95,7 +119,7 @@ class DrillDownDialog extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoCard("Total fugas", fugas.length.toString(), Icons.bug_report),
+        _buildInfoCard("Total fugas", widget.fugas.length.toString(), Icons.bug_report),
         const SizedBox(height: 16),
         _buildInfoCard("Impacto económico", _formatCurrency(totalCost), Icons.attach_money),
         const SizedBox(height: 24),
@@ -131,7 +155,7 @@ class DrillDownDialog extends StatelessWidget {
   }
 
   Widget _buildFugasList() {
-    if (fugas.isEmpty) {
+    if (widget.fugas.isEmpty) {
       return const Center(
         child: Text(
           "No hay fugas para mostrar",
@@ -140,10 +164,10 @@ class DrillDownDialog extends StatelessWidget {
       );
     }
 
-    bool isAhorro = title.contains('Ahorro');
+    bool isAhorro = widget.title.contains('Ahorro');
     double totalValue = isAhorro 
-        ? fugas.fold(0.0, (sum, f) => sum + ((f.costoAnual - f.costoActual) / 12))
-        : fugas.fold(0.0, (sum, f) => sum + f.costoActual);
+        ? widget.fugas.fold(0.0, (sum, f) => sum + ((f.costoAnual - f.costoActual) / 12))
+        : widget.fugas.fold(0.0, (sum, f) => sum + f.costoActual);
 
     return Column(
       children: [
@@ -160,7 +184,7 @@ class DrillDownDialog extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Total: ${fugas.length} filas",
+                "Total: ${widget.fugas.length} filas",
                 style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
               ),
               Text(
@@ -175,9 +199,9 @@ class DrillDownDialog extends StatelessWidget {
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: fugas.length,
+            itemCount: widget.fugas.length,
             itemBuilder: (context, index) {
-              final fuga = fugas[index];
+              final fuga = widget.fugas[index];
               return InkWell(
                 onTap: () {
                   Navigator.push(

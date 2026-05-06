@@ -16,6 +16,7 @@ import 'package:excel/excel.dart' as xl;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:async';
 
 import '../config/constants.dart';
 import '../providers/fugas_provider.dart';
@@ -30,6 +31,24 @@ class ReportScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportScreenState extends ConsumerState<ReportScreen> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   String _formatCurrency(double amount) {
     RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
     String mathFunc(Match match) => '${match[1]},';
@@ -257,7 +276,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   Widget _buildSummaryCards(List<Fuga> fugas) {
     final totalFugas = fugas.length;
     final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
-    final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + f.costoActual);
+    final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + (f.costoAnual - f.costoActual));
     final reparadas = fugas.where((f) => f.estado == 'Completada').length;
     final efficiency = totalFugas > 0
         ? (reparadas / totalFugas * 100).toStringAsFixed(1)
@@ -281,8 +300,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           Colors.redAccent,
         ),
         _buildKPICard(
-          "Ahorro Generado",
-          _formatCurrency(ahorroGenerado),
+          "Ahorro Mensual",
+          _formatCurrency(ahorroGenerado / 12),
           Icons.savings,
           Colors.green,
         ),
@@ -2492,7 +2511,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
           final bajaCount = fugas.where((f) => f.severidad == 'Baja').length;
           final mediaCount = fugas.where((f) => f.severidad == 'Media').length;
           final altaCount = fugas.where((f) => f.severidad == 'Alta').length;
-          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + f.costoActual);
+          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + (f.costoAnual - f.costoActual));
 
           return [
             pw.Header(
@@ -2509,7 +2528,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                 pw.SizedBox(width: 8),
                 pw.Expanded(child: _buildKPIBox("Economic\nImpact", _formatCurrency(totalImpact), PdfColors.red700)),
                 pw.SizedBox(width: 8),
-                pw.Expanded(child: _buildKPIBox("Savings\nGenerated", _formatCurrency(ahorroGenerado), PdfColors.green700)),
+                pw.Expanded(child: _buildKPIBox("Monthly\nSavings", _formatCurrency(ahorroGenerado / 12), PdfColors.green700)),
                 pw.SizedBox(width: 8),
                 pw.Expanded(child: _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700)),
                 pw.SizedBox(width: 8),

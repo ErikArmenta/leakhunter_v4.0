@@ -11,6 +11,7 @@ import '../widgets/fullscreen_image_viewer.dart';
 import '../widgets/audit_timeline_widget.dart';
 import '../widgets/drill_down_dialog.dart';
 import '../services/export_service.dart';
+import 'dart:async';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -25,10 +26,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
   final double originalHeight = 16715 / 256 / 32; // 2.0385
 
   bool _isMetricsVisible = true; 
+  Timer? _timer;
 
   // Dimensiones del PlanoHanon25K.png (Nuevo Mapa)
   final double ancho_real = 25600.0;
   final double alto_real = 16715.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   String _formatCurrency(double amount) {
     RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');

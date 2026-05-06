@@ -166,13 +166,12 @@ class Fuga {
       fin = DateTime.now();
     }
 
-    final inMinutes = fin.difference(inicio).inMinutes;
-    if (inMinutes <= 0) return 0.0;
-
+    final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
+    if (exactMinutes <= 0) return 0.0;
     const double minutesInYear = 365.0 * 24.0 * 60.0;
     final double costoPorMinuto = costoAnual / minutesInYear;
     
-    return costoPorMinuto * inMinutes;
+    return costoPorMinuto * exactMinutes;
   }
 
   double get consumoActualLitros {
@@ -188,10 +187,9 @@ class Fuga {
       fin = DateTime.now();
     }
 
-    final inMinutes = fin.difference(inicio).inMinutes;
-    if (inMinutes <= 0) return 0.0;
-
-    return lMin * inMinutes.toDouble();
+    final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
+    if (exactMinutes <= 0) return 0.0;
+    return lMin * exactMinutes;
   }
 
   double get consumoActualM3 {
@@ -207,11 +205,10 @@ class Fuga {
       fin = DateTime.now();
     }
 
-    final inMinutes = fin.difference(inicio).inMinutes;
-    if (inMinutes <= 0) return 0.0;
-
+    final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
+    if (exactMinutes <= 0) return 0.0;
     // lMin is Liters per minute. 1000 Liters = 1 m^3
-    return (lMin / 1000.0) * inMinutes;
+    return (lMin / 1000.0) * exactMinutes;
   }
 
   double get consumoActualKWh {
