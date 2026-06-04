@@ -87,7 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                   // Logo
                   Image.asset(
                     'assets/images/EA_2.png',
-                    height: 300,
+                    height: (MediaQuery.of(context).size.height * 0.18).clamp(80, 300),
                     errorBuilder: (context, error, stackTrace) => const SizedBox(),
                   ),
                   const SizedBox(height: 16),
@@ -101,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         child: Text(
                           'Leak Hunter Digital Twin v4.2',
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: (MediaQuery.of(context).size.width * 0.035).clamp(18, 28),
                             fontWeight: FontWeight.bold,
                             color: Colors.blue[400],
                             letterSpacing: -1,
@@ -112,13 +112,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'ENGINEERED FOR PERFORMANCE',
                     style: TextStyle(
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2,
-                      fontSize: 12,
+                      fontSize: (MediaQuery.of(context).size.width * 0.018).clamp(10, 12),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -135,7 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
                   // Login Card
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 450),
+                    constraints: BoxConstraints(maxWidth: [400.0, MediaQuery.of(context).size.width * 0.85].reduce((a, b) => a < b ? a : b)),
                     child: Container(
                       padding: const EdgeInsets.all(32.0),
                       decoration: BoxDecoration(
