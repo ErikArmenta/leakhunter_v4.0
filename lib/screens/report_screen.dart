@@ -68,7 +68,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
         ),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16.0 : 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -174,7 +174,10 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             _buildTopSectors(fugas),
 
             const SizedBox(height: 48),
-            Center(child: _buildHeatmap(fugas)),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Center(child: _buildHeatmap(fugas)),
+            ),
 
             const SizedBox(height: 48),
             const Divider(color: Color(0xFF2d323d)),
@@ -1370,27 +1373,30 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendDot(Colors.redAccent, "Fugas Detectadas"),
-              const SizedBox(width: 16),
-              _buildLegendDot(Colors.greenAccent, "Fugas Reparadas"),
-              const SizedBox(width: 16),
-              Container(width: 20, height: 3, color: Colors.redAccent),
-              const SizedBox(width: 6),
-              const Text(
-                "Tendencia Detectadas",
-                style: TextStyle(color: Colors.white54, fontSize: 10),
-              ),
-              const SizedBox(width: 16),
-              Container(width: 20, height: 3, color: Colors.greenAccent),
-              const SizedBox(width: 6),
-              const Text(
-                "Tendencia Reparadas",
-                style: TextStyle(color: Colors.white54, fontSize: 10),
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendDot(Colors.redAccent, "Fugas Detectadas"),
+                const SizedBox(width: 16),
+                _buildLegendDot(Colors.greenAccent, "Fugas Reparadas"),
+                const SizedBox(width: 16),
+                Container(width: 20, height: 3, color: Colors.redAccent),
+                const SizedBox(width: 6),
+                const Text(
+                  "Tendencia Detectadas",
+                  style: TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+                const SizedBox(width: 16),
+                Container(width: 20, height: 3, color: Colors.greenAccent),
+                const SizedBox(width: 6),
+                const Text(
+                  "Tendencia Reparadas",
+                  style: TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           Expanded(
