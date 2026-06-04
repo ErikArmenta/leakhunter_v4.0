@@ -65,6 +65,7 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
     final cy = (widget.fuga.y1 + widget.fuga.y2) / 2;
     final centerMap = storedToMap(cx, cy);
 
+    final screenWidth = MediaQuery.of(context).size.width;
     final statusColor = AppConstants.getStatusColor(widget.fuga.estado, widget.fuga.tipoFuga);
     final fluidInfo = AppConstants.fluidos[widget.fuga.tipoFuga] ?? {"emoji": "⚠️"};
     final emoji = fluidInfo['emoji'] as String;
@@ -127,8 +128,8 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
           ),
           Positioned(
             bottom: 30,
-            left: MediaQuery.of(context).size.width > 800 ? MediaQuery.of(context).size.width / 2 - 200 : 20,
-            right: MediaQuery.of(context).size.width > 800 ? MediaQuery.of(context).size.width / 2 - 200 : 20,
+            left: screenWidth < 600 ? 12 : screenWidth < 1200 ? screenWidth * 0.1 : screenWidth / 2 - 200,
+            right: screenWidth < 600 ? 12 : screenWidth < 1200 ? screenWidth * 0.1 : screenWidth / 2 - 200,
             child: Material(
               elevation: 12,
               borderRadius: BorderRadius.circular(16),
@@ -140,7 +141,7 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
                   children: [
                     Text(
                       "${widget.fuga.tipoFuga} | ${widget.fuga.severidad}",
-                      style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: screenWidth < 600 ? 14 : 18, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -258,6 +259,7 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
   }
 
   Widget _buildPhotoCol(BuildContext context, String label, String url) {
+    final imageHeight = MediaQuery.of(context).size.width < 600 ? 80.0 : 100.0;
     return Column(
       children: [
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -268,10 +270,10 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
               url,
-              height: 100,
+              height: imageHeight,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_,__,___) => const SizedBox(height: 100, child: Center(child: Icon(Icons.broken_image, color: Colors.grey))),
+              errorBuilder: (_,__,___) => SizedBox(height: imageHeight, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))),
             ),
           ),
         ),
