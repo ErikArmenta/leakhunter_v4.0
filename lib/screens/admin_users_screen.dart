@@ -39,39 +39,46 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         builder: (ctx, setStateDialog) => AlertDialog(
           backgroundColor: const Color(0xFF161a22),
           title: Text(isEditing ? 'Editar Usuario' : 'Nuevo Empleado', style: const TextStyle(color: Colors.white)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Nombre Completo', labelStyle: TextStyle(color: Colors.grey)),
-                ),
-                TextField(
-                  controller: emailController,
-                  style: const TextStyle(color: Colors.white),
-                  enabled: !isEditing, // Email no editable en Supabase por defecto facilmente
-                  decoration: InputDecoration(labelText: 'Correo', labelStyle: const TextStyle(color: Colors.grey), helperText: isEditing ? 'El correo no se puede cambiar aquí.' : null, helperStyle: const TextStyle(color: Colors.orange)),
-                ),
-                TextField(
-                  controller: passwordController,
-                  style: const TextStyle(color: Colors.white),
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: isEditing ? 'Nueva Contraseña (Opcional)' : 'Contraseña', labelStyle: const TextStyle(color: Colors.grey)),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedRole,
-                  dropdownColor: const Color(0xFF1d2129),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Rol', labelStyle: TextStyle(color: Colors.grey)),
-                  items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                  onChanged: (val) {
-                    if (val != null) setStateDialog(() => selectedRole = val);
-                  },
-                ),
-              ],
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(ctx).size.width < 600
+                  ? MediaQuery.of(ctx).size.width * 0.9
+                  : 400,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Nombre Completo', labelStyle: TextStyle(color: Colors.grey)),
+                  ),
+                  TextField(
+                    controller: emailController,
+                    style: const TextStyle(color: Colors.white),
+                    enabled: !isEditing, // Email no editable en Supabase por defecto facilmente
+                    decoration: InputDecoration(labelText: 'Correo', labelStyle: const TextStyle(color: Colors.grey), helperText: isEditing ? 'El correo no se puede cambiar aquí.' : null, helperStyle: const TextStyle(color: Colors.orange)),
+                  ),
+                  TextField(
+                    controller: passwordController,
+                    style: const TextStyle(color: Colors.white),
+                    obscureText: true,
+                    decoration: InputDecoration(labelText: isEditing ? 'Nueva Contraseña (Opcional)' : 'Contraseña', labelStyle: const TextStyle(color: Colors.grey)),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    dropdownColor: const Color(0xFF1d2129),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Rol', labelStyle: TextStyle(color: Colors.grey)),
+                    items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                    onChanged: (val) {
+                      if (val != null) setStateDialog(() => selectedRole = val);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -161,7 +168,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             return const Center(child: Text("No hay usuarios.", style: TextStyle(color: Colors.white54)));
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
             itemCount: users.length,
             itemBuilder: (ctx, i) {
               final u = users[i];
