@@ -157,6 +157,7 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isAdmin = authState.role == 'Admin Principal';
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return RawKeyboardListener(
       focusNode: _focusNode,
@@ -191,7 +192,7 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
             // Toggle button for panel
             Positioned(
               top: 16,
-              right: _isPanelVisible ? (MediaQuery.of(context).size.width >= 800 ? 520 : MediaQuery.of(context).size.width * 0.9 + 20) : 16,
+              right: _isPanelVisible ? (screenWidth < 600 ? screenWidth * 0.9 + 20 : screenWidth < 1200 ? (screenWidth * 0.45).clamp(300, 500) + 20 : (screenWidth * 0.38).clamp(320, 500) + 20) : 16,
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -231,7 +232,7 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
                 top: 16,
                 right: 16,
                 bottom: 16,
-                width: MediaQuery.of(context).size.width >= 800 ? 500 : MediaQuery.of(context).size.width * 0.9,
+                width: screenWidth < 600 ? screenWidth * 0.9 : screenWidth < 1200 ? (screenWidth * 0.45).clamp(300, 500) : (screenWidth * 0.38).clamp(320, 500),
                 child: Material(
                   elevation: 8,
                   borderRadius: BorderRadius.circular(16),
