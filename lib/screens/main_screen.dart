@@ -61,9 +61,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
     final plants = ref.watch(plantsProvider);
     final selectedPlant = ref.watch(selectedPlantProvider);
     
-    // Responsive layout switch
-    final isDesktop = MediaQuery.of(context).size.width >= 800;
+    // Responsive layout switch — 3 breakpoint levels
     final screenSize = MediaQuery.of(context).size;
+    final isMobile = screenSize.width < 600;
+    final isTablet = screenSize.width >= 600 && screenSize.width < 1200;
+    final isDesktop = screenSize.width >= 1200;
+    final panelHeight = (620.0).clamp(0.0, screenSize.height - 60);
     
     final authState = ref.watch(authProvider);
     final String role = authState.role;
@@ -93,13 +96,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
     }
 
     return Scaffold(
-      appBar: isDesktop ? null : AppBar(
+      appBar: isMobile ? AppBar(
         title: Text('🏭💧 ${selectedPlant?.name ?? 'Leak Hunter'}'),
         actions: [
           _buildPlantSelector(ref, plants, selectedPlant),
         ],
-      ),
-      drawer: isDesktop ? null : const FilterDrawer(),
+      ) : null,
+      drawer: isMobile ? const FilterDrawer() : null,
       body: Stack(
         children: [
           // Fondo con transición suave
@@ -122,7 +125,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
           ),
           
           // Botón flotante para abrir el panel cuando está cerrado
-          if (isDesktop && !_showPanel)
+          if ((isTablet || isDesktop) && !_showPanel)
             Positioned(
               left: 16,
               top: _panelPosition.dy,
@@ -170,7 +173,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
             ),
           
           // Panel completo (visible cuando _showPanel es true)
-          if (isDesktop && _showPanel)
+          if ((isTablet || isDesktop) && _showPanel)
             AnimatedPositioned(
               duration: _isDragging ? Duration.zero : const Duration(milliseconds: 450),
               curve: Curves.easeInOutCubic,
@@ -194,7 +197,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                     _isDragging = true;
                     _panelPosition = Offset(
                       (_panelPosition.dx + details.delta.dx).clamp(0.0, screenSize.width - 400),
-                      (_panelPosition.dy + details.delta.dy).clamp(0.0, screenSize.height - 650),
+                      (_panelPosition.dy + details.delta.dy).clamp(0.0, (screenSize.height - panelHeight - 10).clamp(0.0, double.infinity)),
                     );
                   });
                 },
@@ -213,7 +216,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                       color: const Color(0xFF161a22).withOpacity(0.95),
                       clipBehavior: Clip.antiAlias,
                       child: Container(
-                        height: 620,
+                        height: panelHeight,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
@@ -393,7 +396,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOutCubic,
                               child: SizedBox(
-                                width: 280,
+                                width: isTablet ? 220 : 280,
                                 child: Column(
                                   children: [
                                     const VerticalDivider(thickness: 1, width: 1, color: Color(0xFF2d323d)),
@@ -420,7 +423,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
             ),
         ],
       ),
-      bottomNavigationBar: isDesktop ? null : NavigationBar(
+      bottomNavigationBar: isMobile ? NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {
           final visiblePages = dynamicPages.length;
@@ -466,7 +469,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
             label: 'Salir',
           ),
         ],
-      ),
+      ) : null,
     );
   }
 
