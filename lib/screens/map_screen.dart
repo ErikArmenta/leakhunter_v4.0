@@ -190,13 +190,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final pendientes = fugas.where((f) => f.estado != 'Completada').toList();
     double toMitigate = pendientes.fold(0, (sum, f) => sum + f.costoActual);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final List<Widget> cards = [
           _MetricCard(
-            title: "Hallazgos Totales", 
+            title: "Hallazgos Totales",
             value: "$total",
             onTap: () {
               showDialog(
@@ -276,8 +274,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
               );
             },
           ),
-        ],
-      ),
+        ];
+
+        if (constraints.maxWidth < 600) {
+          return GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(8.0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.6,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            children: cards,
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Wrap(
+            direction: Axis.horizontal,
+            spacing: 8,
+            runSpacing: 8,
+            children: cards,
+          ),
+        );
+      },
     );
   }
 
@@ -748,44 +770,46 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget cardContent = Container(
-      width: 150,
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    Widget cardContent = ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 140, maxWidth: 180),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              if (onTap != null)
-                const Icon(Icons.download, size: 12, color: Colors.blueAccent),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: valueColor ?? Colors.white,
+                if (onTap != null)
+                  const Icon(Icons.download, size: 12, color: Colors.blueAccent),
+              ],
             ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              subtitle!,
-              style: TextStyle(fontSize: 11, color: subtitleColor),
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: valueColor ?? Colors.white,
+              ),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle!,
+                style: TextStyle(fontSize: 11, color: subtitleColor),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
 
