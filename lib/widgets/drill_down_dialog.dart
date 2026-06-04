@@ -60,8 +60,8 @@ class _DrillDownDialogState extends State<DrillDownDialog> {
         side: const BorderSide(color: Color(0xFF2d323d)),
       ),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
-        height: MediaQuery.of(context).size.height * 0.7,
+        width: MediaQuery.of(context).size.width < 600 ? MediaQuery.of(context).size.width * 0.95 : [700.0, MediaQuery.of(context).size.width * 0.9].reduce((a, b) => a < b ? a : b),
+        height: MediaQuery.of(context).size.width < 600 ? MediaQuery.of(context).size.height * 0.9 : [500.0, MediaQuery.of(context).size.height * 0.8].reduce((a, b) => a < b ? a : b),
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
