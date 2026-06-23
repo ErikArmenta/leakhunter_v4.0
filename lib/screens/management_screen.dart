@@ -10,6 +10,9 @@ import '../models/fuga.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ManagementScreen extends ConsumerStatefulWidget {
   const ManagementScreen({super.key});
@@ -155,6 +158,8 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+
     final authState = ref.watch(authProvider);
     final isAdmin = authState.role == 'Admin Principal';
     final screenWidth = MediaQuery.of(context).size.width;
@@ -352,6 +357,16 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
                         children: [
                           Icon(Icons.circle, color: color, size: 12),
                           const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.qr_code, color: Colors.white70, size: 20),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _showQRDialog(f);
+                            },
+                          ),
+                          const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
                             padding: EdgeInsets.zero,
@@ -1127,9 +1142,16 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
 
   // ==================== QR CODE DIALOG ====================
   void _showQRDialog(Fuga f) {
-    // Same logic as Python: qrserver API with fuga_id
-    final targetLink = "https://gemelodigital2d.streamlit.app/?fuga_id=${f.id}";
+    final qrKey = GlobalKey();
+    final targetLink = "https://leakhunter-v4-0.vercel.app/?fuga_id=${f.id}";
     final qrImgUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=$targetLink";
+    
+    final bool isInspeccionOk = f.tipoFuga == 'Inspección (OK)';
+    final String titleStr = isInspeccionOk ? "✅ Equipo Libre de Fugas" : "🖨️ Etiqueta QR Inteligente";
+    final Color titleColor = isInspeccionOk ? Colors.greenAccent : Colors.white;
+    final String descStr = isInspeccionOk 
+        ? "Equipo inspeccionado y libre de fugas. Escanea para ver el registro."
+        : "Imprime o escanea este código para acceder directamente a la ficha técnica de esta fuga.";
 
     showDialog(
       context: context,
@@ -1138,79 +1160,109 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("🖨️ Etiqueta QR Inteligente", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text("ID de Fuga: ${f.id} | Máquina: ${f.idMaquina}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1d2129),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF2d323d)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.lightBlueAccent, size: 18),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text("Imprime o escanea este código para acceder directamente a la ficha técnica de esta fuga.",
-                        style: TextStyle(color: Colors.lightBlueAccent, fontSize: 12)),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RepaintBoundary(
+                  key: qrKey,
+                  child: Container(
+                    color: const Color(0xFF161a22),
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(titleStr, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor)),
+                        const SizedBox(height: 8),
+                        Text("ID de Registro: ${f.id} | Máquina: ${f.idMaquina}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1d2129),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF2d323d)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(isInspeccionOk ? Icons.check_circle_outline : Icons.info_outline, color: isInspeccionOk ? Colors.greenAccent : Colors.lightBlueAccent, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(descStr, style: TextStyle(color: isInspeccionOk ? Colors.greenAccent : Colors.lightBlueAccent, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Image.network(
+                            qrImgUrl,
+                            width: 200,
+                            height: 200,
+                            loadingBuilder: (ctx, child, progress) {
+                              if (progress == null) return child;
+                              return const SizedBox(width: 200, height: 200, child: Center(child: CircularProgressIndicator()));
+                            },
+                            errorBuilder: (ctx, error, stack) => const SizedBox(width: 200, height: 200, child: Center(child: Text("Error cargando QR", style: TextStyle(color: Colors.red)))),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1d2129),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: SelectableText(
+                            targetLink,
+                            style: const TextStyle(color: Colors.white54, fontSize: 11, fontFamily: 'monospace'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0, left: 24, right: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text("Cerrar"),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          try {
+                            final boundary = qrKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+                            if (boundary == null) return;
+                            final image = await boundary.toImage(pixelRatio: 3.0);
+                            final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+                            final bytes = byteData?.buffer.asUint8List();
+                            if (bytes != null) {
+                              await Share.shareXFiles([XFile.fromData(bytes, mimeType: 'image/png', name: 'qr_${f.idMaquina}.png')], text: 'QR de la Máquina ${f.idMaquina}');
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al descargar el QR')));
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.download),
+                        label: const Text("Descargar"),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Image.network(
-                  qrImgUrl,
-                  width: 200,
-                  height: 200,
-                  loadingBuilder: (ctx, child, progress) {
-                    if (progress == null) return child;
-                    return const SizedBox(
-                      width: 200,
-                      height: 200,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  },
-                  errorBuilder: (ctx, error, stack) {
-                    return const SizedBox(
-                      width: 200,
-                      height: 200,
-                      child: Center(child: Text("Error cargando QR", style: TextStyle(color: Colors.red))),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1d2129),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: SelectableText(
-                  targetLink,
-                  style: const TextStyle(color: Colors.white54, fontSize: 11, fontFamily: 'monospace'),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Cerrar"),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1283,6 +1335,21 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                           Expanded(
                             child: Column(
                               children: [
+                                DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(labelText: "Fluido"),
+                                  value: editFluido,
+                                  items: AppConstants.fluidos.keys.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                                  onChanged: (val) {
+                                    setDialogState(() {
+                                      editFluido = val!;
+                                      final newCatMap = AppConstants.relacionFugas[editFluido] ?? AppConstants.relacionFugas['Aire']!;
+                                      if (newCatMap.isNotEmpty && !newCatMap.keys.contains(editCategoria)) {
+                                        editCategoria = newCatMap.keys.first;
+                                      }
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
                                 TextFormField(
                                   decoration: const InputDecoration(labelText: "ID Equipo / Máquina"),
                                   initialValue: editIdMaquina,
@@ -1443,6 +1510,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                               }
 
                               final updated = f.copyWith(
+                                tipoFuga: editFluido,
                                 idMaquina: editIdMaquina,
                                 zona: finalZona,
                                 area: editArea,

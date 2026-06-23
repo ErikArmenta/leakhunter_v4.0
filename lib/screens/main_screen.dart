@@ -7,6 +7,7 @@ import 'map_screen.dart';
 import 'management_screen.dart';
 import 'report_screen.dart';
 import 'admin_users_screen.dart';
+import '../providers/fugas_provider.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -48,6 +49,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
     ));
     
     _animationController.forward();
+
+
   }
 
   @override

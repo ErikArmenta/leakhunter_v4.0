@@ -81,3 +81,16 @@ final filteredFugasProvider = Provider<List<Fuga>>((ref) {
     return matchFluid && matchStatus && matchArea && matchDate;
   }).toList();
 });
+
+// Provide a way to store a pending fuga ID if the user comes from a QR code
+class PendingFugaIdNotifier extends Notifier<int?> {
+  final int? initialValue;
+  PendingFugaIdNotifier([this.initialValue]);
+
+  @override
+  int? build() => initialValue;
+
+  void set(int? id) => state = id;
+}
+
+final pendingFugaIdProvider = NotifierProvider<PendingFugaIdNotifier, int?>(PendingFugaIdNotifier.new);
