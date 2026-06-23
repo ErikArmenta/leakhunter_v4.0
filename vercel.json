@@ -1,6 +1,7 @@
 {
+  "buildCommand": "git clone https://github.com/flutter/flutter.git -b stable && ./flutter/bin/flutter build web --release",
   "outputDirectory": "build/web",
-  "buildCommand": "",
+  "installCommand": "echo 'Saltando instalacion de Node, usando Flutter'",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
