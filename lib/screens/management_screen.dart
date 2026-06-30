@@ -40,6 +40,7 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
   String _ubicacion = 'Terrestre';
   String _estado = 'En proceso de reparar';
   String _comentarios = '';
+  String _comentariosReparacion = '';
   
   // Custom Map Drawing State
   LatLng? _point1;
@@ -577,10 +578,24 @@ Widget _buildRegistrationForm() {
           },
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          decoration: const InputDecoration(labelText: 'Comentarios / Observaciones'),
-          maxLines: 3,
-          onChanged: (val) => _comentarios = val,
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(labelText: 'Comentarios Detección'),
+                maxLines: 3,
+                onChanged: (val) => _comentarios = val,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(labelText: 'Comentarios Reparación'),
+                maxLines: 3,
+                onChanged: (val) => _comentariosReparacion = val,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Row(
@@ -951,6 +966,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
       costoAnual: catProps?['costo'] ?? 0.0,
       estado: _estado,
       comentarios: _comentarios,
+      comentariosReparacion: _comentariosReparacion,
       fotoDeteccion: urlDeteccion,
       fotoReparacion: urlReparacion,
     );
@@ -1281,6 +1297,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
     String editUbicacion = f.ubicacion;
     String editEstado = f.estado;
     String editComentarios = f.comentarios;
+    String editComentariosReparacion = f.comentariosReparacion;
     
     // Photo Evidence State for editing
     XFile? editFotoDeteccionFile;
@@ -1342,6 +1359,9 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                   onChanged: (val) {
                                     setDialogState(() {
                                       editFluido = val!;
+                                      if (editFluido == 'Inspección (OK)') {
+                                        editEstado = 'Completada';
+                                      }
                                       final newCatMap = AppConstants.relacionFugas[editFluido] ?? AppConstants.relacionFugas['Aire']!;
                                       if (newCatMap.isNotEmpty && !newCatMap.keys.contains(editCategoria)) {
                                         editCategoria = newCatMap.keys.first;
@@ -1372,6 +1392,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                 ),
                                 const SizedBox(height: 12),
                                 TextFormField(
+                                  key: ValueKey("lMin_${editFluido}_$editCategoria"),
                                   decoration: const InputDecoration(labelText: "I/min"),
                                   initialValue: "${props['l_min']}",
                                   readOnly: true,
@@ -1398,6 +1419,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                 ),
                                 const SizedBox(height: 12),
                                 TextFormField(
+                                  key: ValueKey("costo_${editFluido}_$editCategoria"),
                                   decoration: const InputDecoration(labelText: "Costo/Año (USD)"),
                                   initialValue: "${props['costo']}",
                                   readOnly: true,
@@ -1413,7 +1435,9 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                 DropdownButtonFormField<String>(
                                   decoration: const InputDecoration(labelText: "Estado"),
                                   value: editEstado,
-                                  items: validEstados.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                                  items: editFluido == 'Inspección (OK)' 
+                                    ? [const DropdownMenuItem(value: 'Completada', child: Text('Completada'))]
+                                    : validEstados.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                                   onChanged: (val) => setDialogState(() => editEstado = val!),
                                 ),
                               ],
@@ -1422,11 +1446,26 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        decoration: const InputDecoration(labelText: "Comentarios / Observaciones"),
-                        initialValue: editComentarios,
-                        maxLines: 3,
-                        onChanged: (val) => editComentarios = val,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              decoration: const InputDecoration(labelText: "Comentarios Detección"),
+                              initialValue: editComentarios,
+                              maxLines: 3,
+                              onChanged: (val) => editComentarios = val,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextFormField(
+                              decoration: const InputDecoration(labelText: "Comentarios Reparación"),
+                              initialValue: editComentariosReparacion,
+                              maxLines: 3,
+                              onChanged: (val) => editComentariosReparacion = val,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -1521,6 +1560,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                 estado: editEstado,
                                 ubicacion: editUbicacion,
                                 comentarios: editComentarios,
+                                comentariosReparacion: editComentariosReparacion,
                                 fotoDeteccion: urlDeteccion,
                                 fotoReparacion: urlReparacion,
                               );

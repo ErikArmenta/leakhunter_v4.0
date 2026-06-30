@@ -91,6 +91,25 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
             const SizedBox(height: 48),
             const Text(
+              "💰 Ahorros Generados por Mes",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Ahorro generado por reparaciones completadas",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.white54),
+            ),
+            const SizedBox(height: 24),
+            _buildSavingsChart(fugas),
+
+            const SizedBox(height: 48),
+            const Text(
               "📊 Comparativa: Detección vs Reparación",
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -100,7 +119,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               "Análisis mensual de fugas identificadas vs reparaciones completadas",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.white54),
@@ -173,10 +192,15 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             const SizedBox(height: 24),
             _buildTopSectors(fugas),
 
+            const SizedBox(height: 24),
+            _buildTopSectors(fugas),
+
             const SizedBox(height: 48),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Center(child: _buildHeatmap(fugas)),
+            Center(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: _buildHeatmap(fugas),
+              ),
             ),
 
             const SizedBox(height: 48),
@@ -1638,6 +1662,319 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     );
   }
 
+  /// Calcula datos de ahorro mensual a partir de las fugas completadas
+  Map<String, double> _calcMonthlySavings(List<Fuga> fugas) {
+    final Map<String, double> monthlySavings = {};
+
+    for (var fuga in fugas) {
+      if (fuga.estado != 'Completada') continue;
+
+      final fechaTermino = fuga.fechaTermino;
+      if (fechaTermino == null) continue;
+
+      final monthKey = '${fechaTermino.month}/${fechaTermino.year}';
+      final ahorro = fuga.costoAnual - fuga.costoActual;
+      if (ahorro > 0) {
+        monthlySavings[monthKey] = (monthlySavings[monthKey] ?? 0) + ahorro;
+      }
+    }
+
+    return monthlySavings;
+  }
+
+  Widget _buildSavingsChart(List<Fuga> fugas) {
+    final monthlySavings = _calcMonthlySavings(fugas);
+
+    if (monthlySavings.isEmpty) {
+      return Container(
+        height: 300,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1c2128),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.savings, size: 40, color: Colors.white38),
+              SizedBox(height: 12),
+              Text(
+                "No hay datos de ahorro para mostrar",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Se requieren fugas con estado 'Completada' y fechas válidas",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final sortedMonths = monthlySavings.keys.toList()
+      ..sort((a, b) {
+        final aParts = a.split('/');
+        final bParts = b.split('/');
+        final aDate = DateTime(int.parse(aParts[1]), int.parse(aParts[0]));
+        final bDate = DateTime(int.parse(bParts[1]), int.parse(bParts[0]));
+        return aDate.compareTo(bDate);
+      });
+
+    final savingsValues = sortedMonths
+        .map((month) => monthlySavings[month]!)
+        .toList();
+
+    // Calcular ahorro acumulado
+    final List<double> cumulativeSavings = [];
+    double cumSum = 0;
+    for (var val in savingsValues) {
+      cumSum += val;
+      cumulativeSavings.add(cumSum);
+    }
+
+    final maxY = [...savingsValues, ...cumulativeSavings]
+        .reduce((a, b) => a > b ? a : b) * 1.2;
+
+    final totalSavings = savingsValues.reduce((a, b) => a + b);
+
+    return Container(
+      height: 460,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1c2128),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendDot(Colors.greenAccent, "Ahorro Mensual"),
+                const SizedBox(width: 16),
+                Container(width: 20, height: 3, color: const Color(0xFF00c6ff)),
+                const SizedBox(width: 6),
+                const Text(
+                  "Ahorro Acumulado",
+                  style: TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Stack(
+                children: [
+                  BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: maxY,
+                      barTouchData: BarTouchData(
+                        touchCallback: (FlTouchEvent event, BarTouchResponse? response) {
+                          if (event is FlTapUpEvent && response != null && response.spot != null) {
+                            final month = sortedMonths[response.spot!.touchedBarGroupIndex];
+                            final fugasMes = fugas.where((f) {
+                              if (f.estado != 'Completada') return false;
+                              final ft = f.fechaTermino;
+                              if (ft == null) return false;
+                              return '${ft.month}/${ft.year}' == month;
+                            }).toList();
+                            _showDrillDownDialog("Ahorros Generados - $month", fugasMes, 'savings');
+                          }
+                        },
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (_) => const Color(0xFF1c2128),
+                          tooltipBorder: const BorderSide(
+                            color: Colors.greenAccent,
+                            width: 1.5,
+                          ),
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final month = sortedMonths[group.x.toInt()];
+                            final monthName = _getMonthName(
+                              int.parse(month.split('/')[0]),
+                            );
+                            final year = month.split('/')[1];
+                            return BarTooltipItem(
+                              '$monthName $year\n',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Ahorro: ${_formatCurrency(rod.toY)}',
+                                  style: const TextStyle(
+                                    color: Colors.greenAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index >= 0 && index < sortedMonths.length) {
+                                final month = sortedMonths[index];
+                                final monthNum = int.parse(month.split('/')[0]);
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    _getShortMonthName(monthNum),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      barGroups: List.generate(sortedMonths.length, (index) {
+                        return BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: savingsValues[index],
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF28A745), Color(0xFF69F0AE)],
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                              ),
+                              width: 18,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(6),
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                    ),
+                  ),
+                  // Línea de tendencia acumulada
+                  IgnorePointer(
+                    child: LineChart(
+                      LineChartData(
+                        lineTouchData: const LineTouchData(enabled: false),
+                        gridData: const FlGridData(show: false),
+                        titlesData: const FlTitlesData(show: false),
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: List.generate(
+                              cumulativeSavings.length,
+                              (i) => FlSpot(i.toDouble(), cumulativeSavings[i]),
+                            ),
+                            isCurved: true,
+                            color: const Color(0xFF00c6ff),
+                            barWidth: 3,
+                            isStrokeCapRound: true,
+                            dotData: FlDotData(
+                              show: true,
+                              getDotPainter: (spot, pct, bar, idx) =>
+                                  FlDotCirclePainter(
+                                radius: 4,
+                                color: const Color(0xFF00c6ff),
+                                strokeWidth: 2,
+                                strokeColor: const Color(0xFF0d1117),
+                              ),
+                            ),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF00c6ff).withValues(alpha: 0.15),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          ),
+                        ],
+                        minY: 0,
+                        maxY: maxY,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildEfficiencyMetric(
+                  "Ahorro Total",
+                  _formatCurrency(totalSavings),
+                  Icons.savings,
+                  Colors.greenAccent,
+                ),
+                Container(width: 1, height: 30, color: Colors.white24),
+                _buildEfficiencyMetric(
+                  "Promedio Mensual",
+                  _formatCurrency(totalSavings / sortedMonths.length),
+                  Icons.trending_up,
+                  const Color(0xFF00c6ff),
+                ),
+                Container(width: 1, height: 30, color: Colors.white24),
+                _buildEfficiencyMetric(
+                  "Mejor Mes",
+                  _formatCurrency(savingsValues.reduce((a, b) => a > b ? a : b)),
+                  Icons.emoji_events,
+                  Colors.amberAccent,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLegendDot(Color color, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1953,7 +2290,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                               color: Colors.white38,
                             ),
                             const SizedBox(width: 8),
-                            Text(
+                            const Text(
                               "👆 Pasa el mouse sobre el gráfico para ver detalles",
                               style: TextStyle(
                                 color: Colors.white38,
@@ -1968,56 +2305,58 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               const SizedBox(height: 8),
 
               Expanded(
-                child: RadarChart(
-                  RadarChartData(
-                    radarBorderData: BorderSide(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
-                    gridBorderData: BorderSide(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 0.5,
-                    ),
-                    tickBorderData: const BorderSide(color: Colors.transparent),
-                    ticksTextStyle: const TextStyle(color: Colors.transparent),
-                    titleTextStyle: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    radarTouchData: RadarTouchData(
-                      touchCallback: (event, response) {
-                        if (response != null && response.touchedSpot != null) {
-                          setLocalState(() {
-                            hoveredIndex = response.touchedSpot!.touchedDataSetIndex >= 0
-                                ? response.touchedSpot!.touchedRadarEntryIndex
-                                : null;
-                          });
-                        } else {
-                          setLocalState(() => hoveredIndex = null);
-                        }
-                      },
-                    ),
-                    getTitle: (index, angle) {
-                      final config = tiposConfig[index];
-                      final valor = valoresReales[index];
-
-                      return RadarChartTitle(
-                        text: '${config['nombre']}\n${valor.toInt()}',
-                        angle: angle,
-                      );
-                    },
-                    dataSets: [
-                      RadarDataSet(
-                        fillColor: const Color(0xFF5271ff).withOpacity(0.3),
-                        borderColor: const Color(0xFF5271ff),
-                        entryRadius: 5,
-                        borderWidth: 2,
-                        dataEntries: normalized.asMap().entries.map((entry) {
-                          return RadarEntry(value: entry.value);
-                        }).toList(),
+                child: Center(
+                  child: RadarChart(
+                    RadarChartData(
+                      radarBorderData: BorderSide(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
                       ),
-                    ],
+                      gridBorderData: BorderSide(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 0.5,
+                      ),
+                      tickBorderData: const BorderSide(color: Colors.transparent),
+                      ticksTextStyle: const TextStyle(color: Colors.transparent),
+                      titleTextStyle: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      radarTouchData: RadarTouchData(
+                        touchCallback: (event, response) {
+                          if (response != null && response.touchedSpot != null) {
+                            setLocalState(() {
+                              hoveredIndex = response.touchedSpot!.touchedDataSetIndex >= 0
+                                  ? response.touchedSpot!.touchedRadarEntryIndex
+                                  : null;
+                            });
+                          } else {
+                            setLocalState(() => hoveredIndex = null);
+                          }
+                        },
+                      ),
+                      getTitle: (index, angle) {
+                        final config = tiposConfig[index];
+                        final valor = valoresReales[index];
+
+                        return RadarChartTitle(
+                          text: '${config['nombre']}\n${valor.toInt()}',
+                          angle: angle,
+                        );
+                      },
+                      dataSets: [
+                        RadarDataSet(
+                          fillColor: const Color(0xFF5271ff).withOpacity(0.3),
+                          borderColor: const Color(0xFF5271ff),
+                          entryRadius: 5,
+                          borderWidth: 2,
+                          dataEntries: normalized.asMap().entries.map((entry) {
+                            return RadarEntry(value: entry.value);
+                          }).toList(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2621,6 +2960,16 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               ]
             ),
             
+            pw.SizedBox(height: 30),
+
+            // ===== NUEVA SECCIÓN: Gráfica de Ahorro Mensual en PDF =====
+            pw.Header(
+              level: 1,
+              child: pw.Text("Monthly Savings Trend", style: pw.TextStyle(color: colorPrimario, fontSize: 16)),
+              decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
+            ),
+            pw.SizedBox(height: 10),
+            _buildPdfSavingsSection(fugas, colorPrimario, colorTexto, colorFondoGris, colorSecundario),
             pw.SizedBox(height: 40),
             
             pw.Header(
@@ -2648,7 +2997,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               cellStyle: const pw.TextStyle(fontSize: 8),
               oddRowDecoration: pw.BoxDecoration(color: colorFondoGris),
               data: <List<String>>[
-                <String>['ID', 'Area', 'Machine', 'Type', 'Severity', 'Cost/Year', 'Consumo Acum', 'Status'],
+                <String>['ID', 'Area', 'Machine', 'Type', 'Severity', 'Cost/Year', 'Savings', 'Consumo Acum', 'Status'],
                 ...fugas.take(40).map((f) {
                   String consumoStr = '';
                   if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural') {
@@ -2658,6 +3007,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                   } else if (f.tipoFuga == 'Aire') {
                     consumoStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
                   }
+                  final ahorro = f.estado == 'Completada' ? (f.costoAnual - f.costoActual) : 0.0;
                   return [
                     f.id.toString(),
                     f.area,
@@ -2665,6 +3015,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                     f.tipoFuga,
                     f.severidad,
                     _formatCurrency(f.costoActual.toDouble()),
+                    _formatCurrency(ahorro),
                     consumoStr,
                     f.estado,
                   ];
@@ -2859,6 +3210,187 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
         pw.SizedBox(width: 4),
         pw.Text(label, style: const pw.TextStyle(fontSize: 10)),
       ]
+    );
+  }
+
+  /// Genera la sección de ahorro mensual para el PDF ejecutivo
+  pw.Widget _buildPdfSavingsSection(
+    List<Fuga> fugas,
+    PdfColor colorPrimario,
+    PdfColor colorTexto,
+    PdfColor colorFondoGris,
+    PdfColor colorSecundario,
+  ) {
+    final monthlySavings = _calcMonthlySavings(fugas);
+
+    if (monthlySavings.isEmpty) {
+      return pw.Container(
+        padding: const pw.EdgeInsets.all(20),
+        decoration: pw.BoxDecoration(
+          color: colorFondoGris,
+          borderRadius: pw.BorderRadius.circular(8),
+        ),
+        child: pw.Center(
+          child: pw.Text(
+            "No savings data available - No completed leaks with valid dates found.",
+            style: pw.TextStyle(color: PdfColors.grey600, fontSize: 11, fontStyle: pw.FontStyle.italic),
+          ),
+        ),
+      );
+    }
+
+    final sortedMonths = monthlySavings.keys.toList()
+      ..sort((a, b) {
+        final aParts = a.split('/');
+        final bParts = b.split('/');
+        final aDate = DateTime(int.parse(aParts[1]), int.parse(aParts[0]));
+        final bDate = DateTime(int.parse(bParts[1]), int.parse(bParts[0]));
+        return aDate.compareTo(bDate);
+      });
+
+    final savingsValues = sortedMonths
+        .map((month) => monthlySavings[month]!)
+        .toList();
+
+    double cumSum = 0;
+    final List<double> cumulativeSavings = [];
+    for (var val in savingsValues) {
+      cumSum += val;
+      cumulativeSavings.add(cumSum);
+    }
+
+    final totalSavings = savingsValues.reduce((a, b) => a + b);
+    final avgMonthlySavings = totalSavings / sortedMonths.length;
+    final bestMonth = savingsValues.reduce((a, b) => a > b ? a : b);
+    final bestMonthIdx = savingsValues.indexOf(bestMonth);
+    final bestMonthName = sortedMonths[bestMonthIdx];
+    final bestMonthParts = bestMonthName.split('/');
+    final bestMonthLabel = '${_getShortMonthName(int.parse(bestMonthParts[0]))} ${bestMonthParts[1]}';
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // KPI row for savings
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Expanded(child: _buildKPIBox("Total\nSavings", _formatCurrency(totalSavings), PdfColors.green700)),
+            pw.SizedBox(width: 8),
+            pw.Expanded(child: _buildKPIBox("Monthly\nAverage", _formatCurrency(avgMonthlySavings), PdfColor.fromHex('#00838F'))),
+            pw.SizedBox(width: 8),
+            pw.Expanded(child: _buildKPIBox("Best\nMonth", '$bestMonthLabel\n${_formatCurrency(bestMonth)}', PdfColor.fromHex('#F9A825'))),
+            pw.SizedBox(width: 8),
+            pw.Expanded(child: _buildKPIBox("Cumulative\nSavings", _formatCurrency(cumSum), PdfColors.blueGrey700)),
+          ],
+        ),
+        pw.SizedBox(height: 25),
+        
+        // Custom Bar Chart for Savings
+        pw.Text("Generated Savings by Month", style: pw.TextStyle(fontSize: 12, color: colorTexto, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 10),
+        pw.Container(
+          height: 140,
+          padding: const pw.EdgeInsets.only(top: 20, bottom: 5, left: 10, right: 10),
+          decoration: pw.BoxDecoration(
+            color: colorFondoGris,
+            borderRadius: pw.BorderRadius.circular(8),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+            children: sortedMonths.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final val = savingsValues[idx];
+              final maxV = savingsValues.reduce((a, b) => a > b ? a : b);
+              final heightPct = maxV > 0 ? val / maxV : 0.0;
+              final shortMonth = _getShortMonthName(int.parse(entry.value.split('/')[0]));
+              
+              return pw.Column(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Text(_formatCurrency(val), style: pw.TextStyle(fontSize: 7, color: PdfColors.green800, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 2),
+                  pw.Container(
+                    width: 25,
+                    height: 80 * heightPct,
+                    color: PdfColor.fromHex('#4CAF50'),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(shortMonth, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+        pw.SizedBox(height: 25),
+
+        // Savings table
+        pw.Text(
+          "Monthly Savings Breakdown (Savings from completed leak repairs)",
+          style: pw.TextStyle(fontSize: 10, color: colorTexto, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 8),
+        pw.TableHelper.fromTextArray(
+          columnWidths: {
+            0: const pw.FlexColumnWidth(2),
+            1: const pw.FlexColumnWidth(2),
+            2: const pw.FlexColumnWidth(2),
+            3: const pw.FlexColumnWidth(1.5),
+          },
+          headerAlignment: pw.Alignment.centerLeft,
+          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),
+          headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#2E7D32')),
+          cellAlignment: pw.Alignment.centerLeft,
+          cellStyle: const pw.TextStyle(fontSize: 9),
+          oddRowDecoration: pw.BoxDecoration(color: colorFondoGris),
+          data: <List<String>>[
+            <String>['Month', 'Monthly Savings', 'Cumulative Savings', 'vs Previous'],
+            ...sortedMonths.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final month = entry.value;
+              final monthParts = month.split('/');
+              final monthLabel = '${_getMonthName(int.parse(monthParts[0]))} ${monthParts[1]}';
+              final saving = savingsValues[idx];
+              final cumulative = cumulativeSavings[idx];
+              String vsAnterior = '--';
+              if (idx > 0) {
+                final diff = saving - savingsValues[idx - 1];
+                final pct = savingsValues[idx - 1] > 0
+                    ? ((diff / savingsValues[idx - 1]) * 100).toStringAsFixed(1)
+                    : 'N/A';
+                vsAnterior = diff >= 0 ? '+${_formatCurrency(diff)} ($pct%)' : '${_formatCurrency(diff)} ($pct%)';
+              }
+              return [
+                monthLabel,
+                _formatCurrency(saving),
+                _formatCurrency(cumulative),
+                vsAnterior,
+              ];
+            }),
+          ],
+        ),
+        pw.SizedBox(height: 8),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          decoration: pw.BoxDecoration(
+            color: PdfColor.fromHex('#E8F5E9'),
+            borderRadius: pw.BorderRadius.circular(6),
+            border: pw.Border.all(color: PdfColor.fromHex('#4CAF50'), width: 0.5),
+          ),
+          child: pw.Row(
+            children: [
+              pw.Text("Summary: ", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#2E7D32'))),
+              pw.Expanded(
+                child: pw.Text(
+                  "Total savings of ${_formatCurrency(totalSavings)} across ${sortedMonths.length} month(s) with an average of ${_formatCurrency(avgMonthlySavings)}/month. Best performing month: $bestMonthLabel with ${_formatCurrency(bestMonth)} saved.",
+                  style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#1B5E20')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

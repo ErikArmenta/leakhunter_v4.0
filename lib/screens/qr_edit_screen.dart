@@ -27,6 +27,7 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
   String? editUbicacion;
   String? editEstado;
   String? editComentarios;
+  String? editComentariosReparacion;
   
   XFile? editFotoDeteccionFile;
   XFile? editFotoReparacionFile;
@@ -44,6 +45,7 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
     editUbicacion = f.ubicacion;
     editEstado = f.estado;
     editComentarios = f.comentarios;
+    editComentariosReparacion = f.comentariosReparacion;
     
     final validSeverities = ["Baja", "Media", "Alta"];
     if (!validSeverities.contains(editSeveridad)) editSeveridad = "Media";
@@ -205,6 +207,9 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
                           onChanged: (val) {
                             setState(() {
                               editFluido = val!;
+                              if (editFluido == 'Inspección (OK)') {
+                                editEstado = 'Completada';
+                              }
                               final newCatMap = AppConstants.relacionFugas[editFluido] ?? AppConstants.relacionFugas['Aire']!;
                               if (newCatMap.isNotEmpty && !newCatMap.keys.contains(editCategoria)) {
                                 editCategoria = newCatMap.keys.first;
@@ -233,6 +238,7 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
+                          key: ValueKey("lMin_${editFluido}_$editCategoria"),
                           decoration: const InputDecoration(labelText: "I/min"),
                           initialValue: "${props['l_min']}",
                           readOnly: true,
@@ -252,6 +258,7 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
+                          key: ValueKey("costo_${editFluido}_$editCategoria"),
                           decoration: const InputDecoration(labelText: "Costo/Año (USD)"),
                           initialValue: "${props['costo']}",
                           readOnly: true,
@@ -267,15 +274,32 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
                         DropdownButtonFormField<String>(
                           decoration: const InputDecoration(labelText: "Estado"),
                           value: editEstado,
-                          items: ["En proceso de reparar", "Dañada", "Completada"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                          items: editFluido == 'Inspección (OK)'
+                              ? [const DropdownMenuItem(value: 'Completada', child: Text('Completada'))]
+                              : ["En proceso de reparar", "Dañada", "Completada"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                           onChanged: (val) => setState(() => editEstado = val!),
                         ),
                         const SizedBox(height: 12),
-                        TextFormField(
-                          decoration: const InputDecoration(labelText: "Comentarios / Observaciones"),
-                          initialValue: editComentarios,
-                          maxLines: 3,
-                          onChanged: (val) => editComentarios = val,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                decoration: const InputDecoration(labelText: "Comentarios Detección"),
+                                initialValue: editComentarios,
+                                maxLines: 3,
+                                onChanged: (val) => editComentarios = val,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                decoration: const InputDecoration(labelText: "Comentarios Reparación"),
+                                initialValue: editComentariosReparacion,
+                                maxLines: 3,
+                                onChanged: (val) => editComentariosReparacion = val,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -361,6 +385,7 @@ class _QREditScreenState extends ConsumerState<QREditScreen> {
                                 estado: editEstado,
                                 ubicacion: editUbicacion,
                                 comentarios: editComentarios,
+                                comentariosReparacion: editComentariosReparacion,
                                 fotoDeteccion: urlDeteccion,
                                 fotoReparacion: urlReparacion,
                               );

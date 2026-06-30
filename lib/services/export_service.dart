@@ -26,7 +26,7 @@ class ExportService {
     List<String> headerText = [
       'ID', 'Fecha/Zona', 'Tipo Fuga', 'Área', 'Ubicación', 
       'ID Máquina', 'Severidad', 'Categoría', 'L/min', 
-      'Impacto Acum (USD)', 'Consumo Acumulado', 'Estado', 'Comentarios'
+      'Impacto Acum (USD)', 'Ahorros Generados (USD)', 'Consumo Acumulado', 'Estado', 'Comentarios Detección', 'Comentarios Reparación'
     ];
     
     List<xl.CellValue> header = headerText.map((t) => xl.TextCellValue(t)).toList();
@@ -49,7 +49,9 @@ class ExportService {
     sheetObject.setColumnWidth(9, 20.0);
     sheetObject.setColumnWidth(10, 20.0);
     sheetObject.setColumnWidth(11, 20.0);
-    sheetObject.setColumnWidth(12, 45.0);
+    sheetObject.setColumnWidth(12, 20.0);
+    sheetObject.setColumnWidth(13, 45.0);
+    sheetObject.setColumnWidth(14, 45.0);
 
     for (var f in fugas) {
       String consumoAcumStr = '';
@@ -60,6 +62,8 @@ class ExportService {
       } else if (f.tipoFuga == 'Aire') {
         consumoAcumStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
       }
+
+      final ahorro = f.estado == 'Completada' ? (f.costoAnual - f.costoActual) : 0.0;
 
       sheetObject.appendRow([
         xl.TextCellValue(f.id?.toString() ?? '0'),
@@ -72,9 +76,11 @@ class ExportService {
         xl.TextCellValue(f.categoria),
         xl.TextCellValue(f.lMin.toStringAsFixed(2)),
         xl.TextCellValue(f.costoActual.toStringAsFixed(2)),
+        xl.TextCellValue(ahorro.toStringAsFixed(2)),
         xl.TextCellValue(consumoAcumStr),
         xl.TextCellValue(f.estado),
         xl.TextCellValue(f.comentarios),
+        xl.TextCellValue(f.comentariosReparacion),
       ]);
     }
 

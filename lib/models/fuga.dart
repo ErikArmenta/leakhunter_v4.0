@@ -15,6 +15,7 @@ class Fuga {
   final double costoAnual;
   final String estado;
   final String comentarios;
+  final String comentariosReparacion;
   final String? fotoDeteccion;
   final String? fotoReparacion;
 
@@ -35,6 +36,7 @@ class Fuga {
     required this.costoAnual,
     required this.estado,
     this.comentarios = '',
+    this.comentariosReparacion = '',
     this.fotoDeteccion,
     this.fotoReparacion,
   });
@@ -57,6 +59,7 @@ class Fuga {
       costoAnual: (json['costo_anual'] ?? json['costoanual'] ?? 0).toDouble(),
       estado: json['estado'] ?? 'Dañada',
       comentarios: json['comentarios'] ?? json['comentario'] ?? '',
+      comentariosReparacion: json['comentarios_reparacion'] ?? '',
       fotoDeteccion: json['foto_deteccion'],
       fotoReparacion: json['foto_reparacion'],
     );
@@ -80,6 +83,7 @@ class Fuga {
       'costo_anual': costoAnual,
       'estado': estado,
       'comentarios': comentarios,
+      'comentarios_reparacion': comentariosReparacion,
       if (fotoDeteccion != null) 'foto_deteccion': fotoDeteccion,
       if (fotoReparacion != null) 'foto_reparacion': fotoReparacion,
     };
@@ -102,6 +106,7 @@ class Fuga {
     double? costoAnual,
     String? estado,
     String? comentarios,
+    String? comentariosReparacion,
     String? fotoDeteccion,
     String? fotoReparacion,
   }) {
@@ -122,6 +127,7 @@ class Fuga {
       costoAnual: costoAnual ?? this.costoAnual,
       estado: estado ?? this.estado,
       comentarios: comentarios ?? this.comentarios,
+      comentariosReparacion: comentariosReparacion ?? this.comentariosReparacion,
       fotoDeteccion: fotoDeteccion ?? this.fotoDeteccion,
       fotoReparacion: fotoReparacion ?? this.fotoReparacion,
     );
