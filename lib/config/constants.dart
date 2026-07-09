@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
+  // Minutos de operación anual para Aceite (248 días de trabajo de máquinas)
+  static const double minutosAnualesAceite = 245520.0; // 248 días * 24h * 60min
+  // Minutos anuales para Helio y Aire (365 días completos del año)
+  static const double minutosAnualesHelioAire = 525600.0; // 365 días * 24h * 60min
+
   static const Map<String, Map<String, dynamic>> relacionFugas = {
+    // Aire: l_min almacenado en DB representa cfm (se muestra como cfm en la app)
+    // Fórmula: cfm * 525,600 min/año * 0.138 dlls/kWh
     "Aire": {
-      "Fuga A": {"l_min": "0.1-10", "costo": 60.0},
-      "Fuga B": {"l_min": "10.1-20", "costo": 300.0},
-      "Fuga C": {"l_min": "20.1-30", "costo": 680.0},
-      "Fuga D": {"l_min": "30.1-40", "costo": 890.0},
-      "Fuga E": {"l_min": "40.1-50", "costo": 1090.0},
+      "Fuga A": {"l_min": "2.0", "costo": 145065.0},
+      "Fuga B": {"l_min": "8.0", "costo": 580262.4},
+      "Fuga C": {"l_min": "20.5", "costo": 1486922.4},
     },
+    // Helio: l_min almacenado en DB representa m³/min (se muestra como m³/min en la app)
+    // Fórmula: (m³/1440 min) * 525,600 min/año * 54.9 dlls/m³
     "Helio": {
-      "Fuga A": {"l_min": "1-10", "costo": 182500.0},
-      "Fuga B": {"l_min": "10-20", "costo": 365000.0},
-      "Fuga C": {"l_min": "20-40", "costo": 730000.0},
-      "Fuga D": {"l_min": "40-60", "costo": 1095000.0},
+      "Fuga A": {"l_min": "1.0", "costo": 20025.67},
+      "Fuga B": {"l_min": "2.0", "costo": 40825.50},
+      "Fuga C": {"l_min": "3.0", "costo": 60019.31},
     },
     "Agua": {
       "Fuga A": {"l_min": "0.01-0.05", "costo": 114.0},
@@ -22,10 +28,12 @@ class AppConstants {
       "Fuga D": {"l_min": "0.20-1.50", "costo": 3400.0},
       "Fuga E": {"l_min": "1.50-3.00", "costo": 6840.0},
     },
+    // Aceite: l_min almacenado en DB representa l/min
+    // Fórmula: l_min * 245,520 min/año / 1000 (a litros) * 2.91 dlls/litro
     "Aceite": {
-      "Fuga A": {"l_min": "0.002-0.004", "costo": 2181.17},
-      "Fuga B": {"l_min": "0.004-0.01", "costo": 10905.48},
-      "Fuga C": {"l_min": "0.01-0.1", "costo": 109058.40},
+      "Fuga A": {"l_min": "3.0", "costo": 2143.0},
+      "Fuga B": {"l_min": "7.0", "costo": 5001.24},
+      "Fuga C": {"l_min": "10.0", "costo": 7144.63},
     },
     "Gas Natural": {
       "Fuga A": {"l_min": "1-50", "costo": 450.0},
@@ -64,5 +72,18 @@ class AppConstants {
     if (estado == "Completada" || tipoFuga == "Inspección (OK)") return const Color(0xFF28A745);
     if (estado == "Dañada") return const Color(0xFFd9534f);
     return const Color(0xFFf0ad4e); // En proceso
+  }
+
+  /// Devuelve la etiqueta de unidad de flujo según el tipo de fluido.
+  /// En la base de datos siempre se guarda como l_min, pero en la UI se muestra diferente.
+  static String getFluidUnit(String tipoFuga) {
+    switch (tipoFuga) {
+      case "Aire":
+        return "cfm"; // Cubic feet per minute
+      case "Helio":
+        return "m³/min"; // Metros cúbicos por minuto
+      default:
+        return "l/min"; // Litros por minuto (Aceite, Agua, Gas Natural)
+    }
   }
 }

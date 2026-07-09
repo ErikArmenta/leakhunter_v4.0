@@ -91,7 +91,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
             const SizedBox(height: 48),
             const Text(
-              "💰 Ahorros Generados por Mes",
+              "💰 Ahorros Generados (Total Acumulado)",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -101,7 +101,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              "Ahorro generado por reparaciones completadas",
+              "Ahorro en bruto por reparaciones completadas (costoAnual - costoAcumulado)",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.white54),
             ),
@@ -189,9 +189,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 24),
-            _buildTopSectors(fugas),
-
             const SizedBox(height: 24),
             _buildTopSectors(fugas),
 
@@ -327,8 +324,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           Colors.redAccent,
         ),
         _buildKPICard(
-          "Ahorro Mensual",
-          _formatCurrency(ahorroGenerado / 12),
+          "Ahorro Generado",
+          _formatCurrency(ahorroGenerado),
           Icons.savings,
           Colors.green,
         ),
@@ -1135,143 +1132,141 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
   );
 }
   Widget _buildHistoryChart(List<Fuga> fugas) {
-    return Container(
-      height: 140,
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1c2128),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: LineChart(
-        LineChartData(
-          lineTouchData: LineTouchData(
-            handleBuiltInTouches: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => const Color(0xFF0d1117),
-              tooltipBorder: const BorderSide(
-                color: Color(0xFF5271ff),
-                width: 1.5,
-              ),
-              tooltipBorderRadius: const BorderRadius.all(Radius.circular(8)),
-              getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
-                const months = ['Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar'];
-                final idx = (spot.x / 2).round().clamp(0, 5);
-                return LineTooltipItem(
-                  '${months[idx]}\n',
-                  const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '${spot.y.toStringAsFixed(1)} reparaciones',
-                      style: const TextStyle(
-                        color: Color(0xFF5271ff),
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+    // Construir datos reales de reparaciones por mes
+    final Map<String, int> monthlyRepairs = {};
+    for (var fuga in fugas) {
+      if (fuga.estado != 'Completada') continue;
+      final ft = fuga.fechaTermino;
+      if (ft == null) continue;
+      final key = '${ft.month}/${ft.year}';
+      monthlyRepairs[key] = (monthlyRepairs[key] ?? 0) + 1;
+    }
+
+    if (monthlyRepairs.isEmpty) {
+      return Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1c2128),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: const Center(
+          child: Text(
+            "Sin datos de reparaciones completadas aún",
+            style: TextStyle(color: Colors.white38),
+          ),
+        ),
+      );
+    }
+
+    final sortedMonths = monthlyRepairs.keys.toList()
+      ..sort((a, b) {
+        final ap = a.split('/'); final bp = b.split('/');
+        return DateTime(int.parse(ap[1]), int.parse(ap[0]))
+            .compareTo(DateTime(int.parse(bp[1]), int.parse(bp[0])));
+      });
+
+    final spots = List.generate(
+      sortedMonths.length,
+      (i) => FlSpot(i.toDouble(), monthlyRepairs[sortedMonths[i]]!.toDouble()),
+    );
+    final maxY = (monthlyRepairs.values.reduce((a, b) => a > b ? a : b).toDouble() * 1.5).clamp(1.0, double.infinity);
+
+    return GestureDetector(
+      onTapUp: (details) {},
+      child: Container(
+        height: 140,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1c2128),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: LineChart(
+          LineChartData(
+            lineTouchData: LineTouchData(
+              handleBuiltInTouches: true,
+              touchCallback: (FlTouchEvent event, LineTouchResponse? resp) {
+                if (event is FlTapUpEvent && resp != null && resp.lineBarSpots != null && resp.lineBarSpots!.isNotEmpty) {
+                  final idx = resp.lineBarSpots!.first.x.toInt().clamp(0, sortedMonths.length - 1);
+                  final month = sortedMonths[idx];
+                  _showMonthDetails(month, fugas);
+                }
+              },
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => const Color(0xFF0d1117),
+                tooltipBorder: const BorderSide(color: Color(0xFF5271ff), width: 1.5),
+                tooltipBorderRadius: const BorderRadius.all(Radius.circular(8)),
+                getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+                  final idx = spot.x.toInt().clamp(0, sortedMonths.length - 1);
+                  final month = sortedMonths[idx];
+                  final parts = month.split('/');
+                  final label = '${_getShortMonthName(int.parse(parts[0]))} ${parts[1]}';
+                  return LineTooltipItem(
+                    '$label\n',
+                    const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w500),
+                    children: [
+                      TextSpan(
+                        text: '${spot.y.toInt()} reparaciones',
+                        style: const TextStyle(color: Color(0xFF5271ff), fontSize: 11, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-          gridData: const FlGridData(show: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 20,
-                getTitlesWidget: (value, meta) {
-                  const style = TextStyle(color: Colors.white38, fontSize: 9);
-                  switch (value.toInt()) {
-                    case 0:
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Oct', style: style),
-                      );
-                    case 2:
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Nov', style: style),
-                      );
-                    case 4:
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Dic', style: style),
-                      );
-                    case 6:
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Ene', style: style),
-                      );
-                    case 8:
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Feb', style: style),
-                      );
-                    case 10:
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text('Mar', style: style),
-                      );
-                  }
-                  return const Text('');
-                },
+                    ],
+                  );
+                }).toList(),
               ),
             ),
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: const [
-                FlSpot(0, 3),
-                FlSpot(2, 4),
-                FlSpot(4, 3.5),
-                FlSpot(6, 5),
-                FlSpot(8, 4.8),
-                FlSpot(10, 6),
-              ],
-              isCurved: true,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5271ff), Color(0xFF00c6ff)],
-              ),
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (spot, pct, bar, idx) => FlDotCirclePainter(
-                  radius: 3,
-                  color: const Color(0xFF00c6ff),
-                  strokeWidth: 1.5,
-                  strokeColor: const Color(0xFF0d1117),
+            gridData: const FlGridData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 20,
+                  getTitlesWidget: (value, meta) {
+                    final idx = value.toInt();
+                    if (idx < 0 || idx >= sortedMonths.length) return const Text('');
+                    final parts = sortedMonths[idx].split('/');
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(_getShortMonthName(int.parse(parts[0])), style: const TextStyle(color: Colors.white38, fontSize: 9)),
+                    );
+                  },
                 ),
               ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF5271ff).withValues(alpha: 0.2),
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            borderData: FlBorderData(show: false),
+            minY: 0,
+            maxY: maxY,
+            lineBarsData: [
+              LineChartBarData(
+                spots: spots,
+                isCurved: true,
+                gradient: const LinearGradient(colors: [Color(0xFF5271ff), Color(0xFF00c6ff)]),
+                barWidth: 3,
+                isStrokeCapRound: true,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, pct, bar, idx) => FlDotCirclePainter(
+                    radius: 3,
+                    color: const Color(0xFF00c6ff),
+                    strokeWidth: 1.5,
+                    strokeColor: const Color(0xFF0d1117),
+                  ),
+                ),
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    colors: [const Color(0xFF5271ff).withValues(alpha: 0.2), Colors.transparent],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2639,7 +2634,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
 
     List<String> headerText = [
       'ID', 'Fecha/Zona', 'Tipo Fuga', 'Área', 'Ubicación', 
-      'ID Máquina', 'Severidad', 'Categoría', 'L/min', 
+      'ID Máquina', 'Severidad', 'Categoría', 'Flujo (unidad var.)', 
       'Costo Anual (USD)', 'Consumo Acumulado', 'Estado', 'Comentarios'
     ];
     
@@ -2661,7 +2656,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     sheetObject.setColumnWidth(5, 18.0); // ID Máquina
     sheetObject.setColumnWidth(6, 15.0); // Severidad
     sheetObject.setColumnWidth(7, 20.0); // Categoría
-    sheetObject.setColumnWidth(8, 12.0); // L/min
+    sheetObject.setColumnWidth(8, 15.0); // Flujo (unidad var.)
     sheetObject.setColumnWidth(9, 20.0); // Costo Anual
     sheetObject.setColumnWidth(10, 20.0); // Consumo Acumulado
     sheetObject.setColumnWidth(11, 20.0); // Estado
@@ -2677,6 +2672,16 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
         consumoAcumStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
       }
 
+      // Determinar la unidad de flujo por tipo de fluido
+      final String unidadFlujo;
+      if (f.tipoFuga == 'Aire') {
+        unidadFlujo = 'cfm';
+      } else if (f.tipoFuga == 'Helio') {
+        unidadFlujo = 'm³/min';
+      } else {
+        unidadFlujo = 'l/min';
+      }
+
       sheetObject.appendRow([
         xl.TextCellValue(f.id?.toString() ?? '0'),
         xl.TextCellValue(f.zona),
@@ -2686,7 +2691,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
         xl.TextCellValue(f.idMaquina),
         xl.TextCellValue(f.severidad),
         xl.TextCellValue(f.categoria),
-        xl.TextCellValue(f.lMin.toStringAsFixed(2)),
+        xl.TextCellValue('${f.lMin.toStringAsFixed(2)} $unidadFlujo'),
         xl.TextCellValue(f.costoActual.toStringAsFixed(2)),
         xl.TextCellValue(consumoAcumStr),
         xl.TextCellValue(f.estado),
@@ -2832,6 +2837,174 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     );
 
     // Página 2+: CONTENIDO
+    // ======== PÁGINA 1: Executive Summary ========
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context context) {
+          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + (f.costoAnual - f.costoActual));
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Header(
+                level: 1,
+                child: pw.Text("1. Executive Summary (KPI)", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+                decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Expanded(child: _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700)),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(child: _buildKPIBox("Economic\nImpact", _formatCurrency(totalImpact), PdfColors.red700)),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(child: _buildKPIBox("Savings\nGenerated", _formatCurrency(ahorroGenerado), PdfColors.green700)),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(child: _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700)),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(child: _buildKPIBox("Global\nEfficiency", "$eficiencia%", colorSecundario)),
+                ]
+              ),
+              pw.SizedBox(height: 12),
+              pw.Text("* Note: If a leak's impact is \$0, it indicates it was repaired and closed on the exact same day of its detection.", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 8, fontStyle: pw.FontStyle.italic)),
+              pw.SizedBox(height: 30),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(color: colorFondoGris, borderRadius: pw.BorderRadius.circular(8)),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text("Report Summary", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
+                    pw.SizedBox(height: 12),
+                    pw.Text("This executive report covers ${fugas.length} findings registered in the Leak Hunter system.", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
+                    pw.SizedBox(height: 6),
+                    pw.Text("• Total accumulated economic impact: ${_formatCurrency(totalImpact)}", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
+                    pw.Text("• Total savings generated from repairs: ${_formatCurrency(ahorroGenerado)}", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
+                    pw.Text("• Repair efficiency: $eficiencia% ($reparadas of ${fugas.length} leaks resolved)", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // ======== PÁGINA 2: Analysis Charts ========
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context context) {
+          final bajaCount = fugas.where((f) => f.severidad == 'Baja').length;
+          final mediaCount = fugas.where((f) => f.severidad == 'Media').length;
+          final altaCount = fugas.where((f) => f.severidad == 'Alta').length;
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Header(
+                level: 1,
+                child: pw.Text("2. Analysis Charts", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+                decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Text("Current Status", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
+                        pw.SizedBox(height: 10),
+                        pw.Container(
+                          height: 140,
+                          child: pw.Chart(
+                            grid: pw.PieGrid(),
+                            datasets: [
+                              if (danadas > 0) pw.PieDataSet(value: danadas.toDouble(), color: PdfColor.fromHex('#F44336'), drawBorder: true),
+                              if (enProceso > 0) pw.PieDataSet(value: enProceso.toDouble(), color: PdfColor.fromHex('#FF9800'), drawBorder: true),
+                              if (reparadas > 0) pw.PieDataSet(value: reparadas.toDouble(), color: PdfColor.fromHex('#4CAF50'), drawBorder: true),
+                            ]
+                          )
+                        ),
+                        pw.SizedBox(height: 10),
+                        pw.Wrap(
+                          spacing: 10, runSpacing: 5, alignment: pw.WrapAlignment.center,
+                          children: [
+                            _buildPdfLegendItem('Damaged ($danadas)', PdfColor.fromHex('#F44336')),
+                            _buildPdfLegendItem('In process ($enProceso)', PdfColor.fromHex('#FF9800')),
+                            _buildPdfLegendItem('Repaired ($reparadas)', PdfColor.fromHex('#4CAF50')),
+                          ]
+                        )
+                      ]
+                    )
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Text("Leak Severity", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
+                        pw.SizedBox(height: 10),
+                        pw.Container(
+                          height: 140,
+                          child: pw.Chart(
+                            grid: pw.PieGrid(),
+                            datasets: [
+                              if (bajaCount > 0) pw.PieDataSet(value: bajaCount.toDouble(), color: PdfColor.fromHex('#8BC34A'), drawBorder: true),
+                              if (mediaCount > 0) pw.PieDataSet(value: mediaCount.toDouble(), color: PdfColor.fromHex('#FFC107'), drawBorder: true),
+                              if (altaCount > 0) pw.PieDataSet(value: altaCount.toDouble(), color: PdfColor.fromHex('#F44336'), drawBorder: true),
+                            ]
+                          )
+                        ),
+                        pw.SizedBox(height: 10),
+                        pw.Wrap(
+                          spacing: 10, runSpacing: 5, alignment: pw.WrapAlignment.center,
+                          children: [
+                            _buildPdfLegendItem('Low ($bajaCount)', PdfColor.fromHex('#8BC34A')),
+                            _buildPdfLegendItem('Medium ($mediaCount)', PdfColor.fromHex('#FFC107')),
+                            _buildPdfLegendItem('High ($altaCount)', PdfColor.fromHex('#F44336')),
+                          ]
+                        )
+                      ]
+                    )
+                  ),
+                ]
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // ======== PÁGINA 3: Monthly Savings Trend ========
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Header(
+                level: 1,
+                child: pw.Text("3. Savings Generated (Gross Total)", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+                decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Expanded(
+                child: _buildPdfSavingsSection(fugas, colorPrimario, colorTexto, colorFondoGris, colorSecundario),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // ======== PÁGINA 4: Critical Points Breakdown (tabla) ========
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -2846,142 +3019,23 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                 pw.Text("Leak Hunter Digital Twin", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
-                 pw.Text('Página ${context.pageNumber} de ${context.pagesCount}', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                pw.Text("Leak Hunter Digital Twin", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                pw.Text('Página ${context.pageNumber} de ${context.pagesCount}', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
               ]
             )
           );
         },
         build: (pw.Context context) {
-          final bajaCount = fugas.where((f) => f.severidad == 'Baja').length;
-          final mediaCount = fugas.where((f) => f.severidad == 'Media').length;
-          final altaCount = fugas.where((f) => f.severidad == 'Alta').length;
-          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + (f.costoAnual - f.costoActual));
-
           return [
             pw.Header(
               level: 1,
-              child: pw.Text("1. Executive Summary (KPI)", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
+              child: pw.Text("4. Critical Points Breakdown", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
               decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
             ),
             pw.SizedBox(height: 15),
-            
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Expanded(child: _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700)),
-                pw.SizedBox(width: 8),
-                pw.Expanded(child: _buildKPIBox("Economic\nImpact", _formatCurrency(totalImpact), PdfColors.red700)),
-                pw.SizedBox(width: 8),
-                pw.Expanded(child: _buildKPIBox("Monthly\nSavings", _formatCurrency(ahorroGenerado / 12), PdfColors.green700)),
-                pw.SizedBox(width: 8),
-                pw.Expanded(child: _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700)),
-                pw.SizedBox(width: 8),
-                pw.Expanded(child: _buildKPIBox("Global\nEfficiency", "$eficiencia%", colorSecundario)),
-              ]
-            ),
-            pw.SizedBox(height: 6),
-            pw.Text("* Note: If a leak's impact is \$0, it indicates it was repaired and closed on the exact same day of its detection.", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 8, fontStyle: pw.FontStyle.italic)),
-            pw.SizedBox(height: 25),
-
-            pw.Header(
-              level: 1,
-              child: pw.Text("2. Analysis Charts", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
-              decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
-            ),
-            pw.SizedBox(height: 15),
-            
-              pw.Row(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
-                    children: [
-                      pw.Text("Current Status", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
-                      pw.SizedBox(height: 10),
-                      pw.Container(
-                        height: 120,
-                        child: pw.Chart(
-                          grid: pw.PieGrid(),
-                          datasets: [
-                            if (danadas > 0) pw.PieDataSet(value: danadas.toDouble(), color: PdfColor.fromHex('#F44336'), drawBorder: true),
-                            if (enProceso > 0) pw.PieDataSet(value: enProceso.toDouble(), color: PdfColor.fromHex('#FF9800'), drawBorder: true),
-                            if (reparadas > 0) pw.PieDataSet(value: reparadas.toDouble(), color: PdfColor.fromHex('#4CAF50'), drawBorder: true),
-                          ]
-                        )
-                      ),
-                      pw.SizedBox(height: 10),
-                      pw.Wrap(
-                        spacing: 10,
-                        runSpacing: 5,
-                        alignment: pw.WrapAlignment.center,
-                        children: [
-                           _buildPdfLegendItem('Damaged ($danadas)', PdfColor.fromHex('#F44336')),
-                           _buildPdfLegendItem('In process ($enProceso)', PdfColor.fromHex('#FF9800')),
-                           _buildPdfLegendItem('Repaired ($reparadas)', PdfColor.fromHex('#4CAF50')),
-                        ]
-                      )
-                    ]
-                  )
-                ),
-                pw.SizedBox(width: 20),
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
-                    children: [
-                      pw.Text("Leak Severity", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
-                      pw.SizedBox(height: 10),
-                      pw.Container(
-                        height: 120,
-                        child: pw.Chart(
-                          grid: pw.PieGrid(),
-                          datasets: [
-                            if (bajaCount > 0) pw.PieDataSet(value: bajaCount.toDouble(), color: PdfColor.fromHex('#8BC34A'), drawBorder: true),
-                            if (mediaCount > 0) pw.PieDataSet(value: mediaCount.toDouble(), color: PdfColor.fromHex('#FFC107'), drawBorder: true),
-                            if (altaCount > 0) pw.PieDataSet(value: altaCount.toDouble(), color: PdfColor.fromHex('#F44336'), drawBorder: true),
-                          ]
-                        )
-                      ),
-                      pw.SizedBox(height: 10),
-                      pw.Wrap(
-                        spacing: 10,
-                        runSpacing: 5,
-                        alignment: pw.WrapAlignment.center,
-                        children: [
-                           _buildPdfLegendItem('Low ($bajaCount)', PdfColor.fromHex('#8BC34A')),
-                           _buildPdfLegendItem('Medium ($mediaCount)', PdfColor.fromHex('#FFC107')),
-                           _buildPdfLegendItem('High ($altaCount)', PdfColor.fromHex('#F44336')),
-                        ]
-                      )
-                    ]
-                  )
-                ),
-              ]
-            ),
-            
-            pw.SizedBox(height: 30),
-
-            // ===== NUEVA SECCIÓN: Gráfica de Ahorro Mensual en PDF =====
-            pw.Header(
-              level: 1,
-              child: pw.Text("Monthly Savings Trend", style: pw.TextStyle(color: colorPrimario, fontSize: 16)),
-              decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
-            ),
-            pw.SizedBox(height: 10),
-            _buildPdfSavingsSection(fugas, colorPrimario, colorTexto, colorFondoGris, colorSecundario),
-            pw.SizedBox(height: 40),
-            
-            pw.Header(
-              level: 1,
-              child: pw.Text("3. Critical Points Breakdown", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
-              decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
-            ),
-            pw.SizedBox(height: 15),
-            
             pw.TableHelper.fromTextArray(
               columnWidths: {
-                0: const pw.FixedColumnWidth(40),
+                0: const pw.FixedColumnWidth(35),
                 1: const pw.FlexColumnWidth(2),
                 2: const pw.FlexColumnWidth(1.5),
                 3: const pw.FlexColumnWidth(1.5),
@@ -2998,7 +3052,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
               oddRowDecoration: pw.BoxDecoration(color: colorFondoGris),
               data: <List<String>>[
                 <String>['ID', 'Area', 'Machine', 'Type', 'Severity', 'Cost/Year', 'Savings', 'Consumo Acum', 'Status'],
-                ...fugas.take(40).map((f) {
+                ...fugas.take(60).map((f) {
                   String consumoStr = '';
                   if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural') {
                     consumoStr = '${f.consumoActualM3.toStringAsFixed(2)} m³';
@@ -3477,7 +3531,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                <tr><td style="color: #8b949e; padding: 3px 0;">Instalación:</td><td style="padding: 3px 0; color: white;">\${'$cleanUbi' === 'Terrestre' ? '🚜' : '☁️'} $cleanUbi</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Estado:</td><td style="padding: 3px 0; color: white;">$cleanEstado</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Categoría:</td><td style="padding: 3px 0; color: white;">$cleanCateg</td></tr>
-               <tr><td style="color: #8b949e; padding: 3px 0;">Caudal:</td><td style="padding: 3px 0; color: white;">\${${f.lMin}} l/min</td></tr>
+               <tr><td style="color: #8b949e; padding: 3px 0;">Caudal:</td><td style="padding: 3px 0; color: white;">\${${f.lMin}} ${AppConstants.getFluidUnit(f.tipoFuga)}</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Impacto Acum:</td><td style="color: #FF4B4B; font-weight: bold; padding: 3px 0;">\\\$\${${f.costoActual.toStringAsFixed(0)}} USD</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Severidad:</td><td style="color: $cleanSevColorHex; font-weight: bold; padding: 3px 0;">$cleanSev</td></tr>
                <tr><td style="color: #8b949e; padding: 3px 0;">Fechas:</td><td style="padding: 3px 0; color: white;">$cleanFechas</td></tr>

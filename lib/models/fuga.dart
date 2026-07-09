@@ -174,7 +174,20 @@ class Fuga {
 
     final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
     if (exactMinutes <= 0) return 0.0;
-    const double minutesInYear = 365.0 * 24.0 * 60.0;
+
+    // Minutos anuales según el tipo de fluido:
+    // - Aceite: 245,520 min/año (248 días de operación de máquinas)
+    // - Helio y Aire: 525,600 min/año (365 días del año completo)
+    // - Demás fluidos: 365 * 24 * 60 = 525,600 min/año (genérico)
+    final double minutesInYear;
+    if (tipoFuga == 'Aceite') {
+      minutesInYear = 245520.0; // 248 días * 24h * 60min
+    } else if (tipoFuga == 'Helio' || tipoFuga == 'Aire') {
+      minutesInYear = 525600.0; // 365 días * 24h * 60min
+    } else {
+      minutesInYear = 365.0 * 24.0 * 60.0; // genérico 525,600
+    }
+
     final double costoPorMinuto = costoAnual / minutesInYear;
     
     return costoPorMinuto * exactMinutes;

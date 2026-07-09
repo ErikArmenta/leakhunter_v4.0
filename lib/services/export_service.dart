@@ -25,7 +25,7 @@ class ExportService {
 
     List<String> headerText = [
       'ID', 'Fecha/Zona', 'Tipo Fuga', 'Área', 'Ubicación', 
-      'ID Máquina', 'Severidad', 'Categoría', 'L/min', 
+      'ID Máquina', 'Severidad', 'Categoría', 'Flujo (unidad var.)', 
       'Impacto Acum (USD)', 'Ahorros Generados (USD)', 'Consumo Acumulado', 'Estado', 'Comentarios Detección', 'Comentarios Reparación'
     ];
     
@@ -45,7 +45,7 @@ class ExportService {
     sheetObject.setColumnWidth(5, 18.0);
     sheetObject.setColumnWidth(6, 15.0);
     sheetObject.setColumnWidth(7, 20.0);
-    sheetObject.setColumnWidth(8, 12.0);
+    sheetObject.setColumnWidth(8, 15.0);
     sheetObject.setColumnWidth(9, 20.0);
     sheetObject.setColumnWidth(10, 20.0);
     sheetObject.setColumnWidth(11, 20.0);
@@ -63,6 +63,16 @@ class ExportService {
         consumoAcumStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
       }
 
+      // Determinar la unidad de flujo por tipo de fluido
+      final String unidadFlujo;
+      if (f.tipoFuga == 'Aire') {
+        unidadFlujo = 'cfm';
+      } else if (f.tipoFuga == 'Helio') {
+        unidadFlujo = 'm³/min';
+      } else {
+        unidadFlujo = 'l/min';
+      }
+
       final ahorro = f.estado == 'Completada' ? (f.costoAnual - f.costoActual) : 0.0;
 
       sheetObject.appendRow([
@@ -74,7 +84,7 @@ class ExportService {
         xl.TextCellValue(f.idMaquina),
         xl.TextCellValue(f.severidad),
         xl.TextCellValue(f.categoria),
-        xl.TextCellValue(f.lMin.toStringAsFixed(2)),
+        xl.TextCellValue('${f.lMin.toStringAsFixed(2)} $unidadFlujo'),
         xl.TextCellValue(f.costoActual.toStringAsFixed(2)),
         xl.TextCellValue(ahorro.toStringAsFixed(2)),
         xl.TextCellValue(consumoAcumStr),

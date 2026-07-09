@@ -241,18 +241,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
           ),
           _MetricCard(
-            title: "✅ Ahorro Mensual",
-            value: "${_formatCurrency(savingGenerated / 12)} USD",
-            subtitle: "Ahorro real por reparaciones",
+            title: "✅ Ahorro Generado",
+            value: "${_formatCurrency(savingGenerated)} USD",
             subtitleColor: const Color(0xFF28A745),
             onTap: () {
               showDialog(
                 context: context,
                 builder: (_) => DrillDownDialog(
-                  title: 'Ahorro Generado (Mensual)',
+                  title: 'Ahorro Generado (Total)',
                   fugas: completadas,
                   type: 'list',
-                  onExportExcel: () => ExportService.exportFilteredExcel(context, completadas, 'Ahorro_Generado_Mensual'),
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, completadas, 'Ahorro_Generado_Total'),
                 )
               );
             },
@@ -270,6 +269,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   fugas: pendientes,
                   type: 'list',
                   onExportExcel: () => ExportService.exportFilteredExcel(context, pendientes, 'Por_Mitigar_Pendientes'),
+                )
+              );
+            },
+          ),
+          _MetricCard(
+            title: "✅ Inspecciones OK",
+            value: "${fugas.where((f) => f.tipoFuga == 'Inspección (OK)').length}",
+            valueColor: const Color(0xFF28A745),
+            onTap: () {
+              final inspeccionesOk = fugas.where((f) => f.tipoFuga == 'Inspección (OK)').toList();
+              showDialog(
+                context: context,
+                builder: (_) => DrillDownDialog(
+                  title: 'Inspecciones OK',
+                  fugas: inspeccionesOk,
+                  type: 'list',
+                  onExportExcel: () => ExportService.exportFilteredExcel(context, inspeccionesOk, 'Inspecciones_OK'),
                 )
               );
             },
@@ -610,7 +626,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
                 _buildDarkRow("Estado:", f.estado),
                 _buildDarkRow("Categoría:", f.categoria),
-                _buildDarkRow("Caudal:", "${f.lMin} l/min"),
+                _buildDarkRow("Caudal:", "${f.lMin} ${AppConstants.getFluidUnit(f.tipoFuga)}"),
                 _buildDarkRow(
                   "Impacto Acum:",
                   "${_formatCurrency(f.costoActual.toDouble())} USD",
