@@ -165,9 +165,7 @@ class _DrillDownDialogState extends State<DrillDownDialog> {
     }
 
     bool isAhorro = widget.title.contains('Ahorro');
-    double totalValue = isAhorro 
-        ? widget.fugas.fold(0.0, (sum, f) => sum + ((f.costoAnual - f.costoActual) / 12))
-        : widget.fugas.fold(0.0, (sum, f) => sum + f.costoActual);
+    double totalValue = widget.fugas.fold(0.0, (sum, f) => sum + f.costoActual);
 
     return Column(
       children: [
@@ -258,7 +256,7 @@ class _DrillDownDialogState extends State<DrillDownDialog> {
                         ),
                         const Spacer(),
                         Text(
-                          _formatCurrency(isAhorro ? ((fuga.costoAnual - fuga.costoActual) / 12) : fuga.costoActual),
+                          _formatCurrency(fuga.costoActual),
                           style: TextStyle(
                             color: isAhorro ? Colors.greenAccent : Colors.orangeAccent,
                             fontSize: 14,
