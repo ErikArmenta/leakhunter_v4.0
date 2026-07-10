@@ -184,7 +184,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final completadas = fugas.where((f) => f.estado == 'Completada').toList();
     double savingGenerated = completadas.fold(
       0.0,
-      (sum, f) => sum + (f.costoAnual - f.costoActual),
+      (sum, f) => sum + f.costoActual,
     );
 
     final pendientes = fugas.where((f) => f.estado != 'Completada').toList();

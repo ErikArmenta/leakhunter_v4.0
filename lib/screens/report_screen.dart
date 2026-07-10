@@ -101,7 +101,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              "Ahorro en bruto por reparaciones completadas (costoAnual - costoAcumulado)",
+              "Ahorro en bruto: costo acumulado de fugas mientras estuvieron abiertas (completadas)",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.white54),
             ),
@@ -300,7 +300,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   Widget _buildSummaryCards(List<Fuga> fugas) {
     final totalFugas = fugas.length;
     final totalImpact = fugas.fold(0.0, (sum, f) => sum + f.costoActual);
-    final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + (f.costoAnual - f.costoActual));
+    final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + f.costoActual);
     final reparadas = fugas.where((f) => f.estado == 'Completada').length;
     final efficiency = totalFugas > 0
         ? (reparadas / totalFugas * 100).toStringAsFixed(1)
@@ -1668,7 +1668,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       if (fechaTermino == null) continue;
 
       final monthKey = '${fechaTermino.month}/${fechaTermino.year}';
-      final ahorro = fuga.costoAnual - fuga.costoActual;
+      final ahorro = fuga.costoActual; // Ahorro en bruto = lo que realmente costó mientras estuvo abierta
       if (ahorro > 0) {
         monthlySavings[monthKey] = (monthlySavings[monthKey] ?? 0) + ahorro;
       }
@@ -2065,7 +2065,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       {'nombre': 'Agua', 'color': Colors.orange, 'severidad': 'Media-Alta'},
       {'nombre': 'Helio', 'color': Colors.deepOrange, 'severidad': 'Alta'},
       {'nombre': 'Aceite', 'color': Colors.red, 'severidad': 'Crítica'},
-      {'nombre': 'Inspección OK', 'color': Colors.blue, 'severidad': 'Control'},
+      {'nombre': 'Inspección (OK)', 'color': Colors.blue, 'severidad': 'Control'},
     ];
 
     final valoresReales = tiposConfig.map((config) {
@@ -2837,79 +2837,115 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
     );
 
     // Página 2+: CONTENIDO
-    // ======== PÁGINA 1: Executive Summary ========
+    // ======== PÁGINAS 1+2 COMBINADAS: Executive Summary + Analysis Charts ========
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(36),
         build: (pw.Context context) {
-          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + (f.costoAnual - f.costoActual));
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-            children: [
-              pw.Header(
-                level: 1,
-                child: pw.Text("1. Executive Summary (KPI)", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
-                decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Expanded(child: _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700)),
-                  pw.SizedBox(width: 8),
-                  pw.Expanded(child: _buildKPIBox("Economic\nImpact", _formatCurrency(totalImpact), PdfColors.red700)),
-                  pw.SizedBox(width: 8),
-                  pw.Expanded(child: _buildKPIBox("Savings\nGenerated", _formatCurrency(ahorroGenerado), PdfColors.green700)),
-                  pw.SizedBox(width: 8),
-                  pw.Expanded(child: _buildKPIBox("Repaired\nLeaks", "$reparadas", PdfColors.green700)),
-                  pw.SizedBox(width: 8),
-                  pw.Expanded(child: _buildKPIBox("Global\nEfficiency", "$eficiencia%", colorSecundario)),
-                ]
-              ),
-              pw.SizedBox(height: 12),
-              pw.Text("* Note: If a leak's impact is \$0, it indicates it was repaired and closed on the exact same day of its detection.", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 8, fontStyle: pw.FontStyle.italic)),
-              pw.SizedBox(height: 30),
-              pw.Container(
-                padding: const pw.EdgeInsets.all(16),
-                decoration: pw.BoxDecoration(color: colorFondoGris, borderRadius: pw.BorderRadius.circular(8)),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text("Report Summary", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
-                    pw.SizedBox(height: 12),
-                    pw.Text("This executive report covers ${fugas.length} findings registered in the Leak Hunter system.", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
-                    pw.SizedBox(height: 6),
-                    pw.Text("• Total accumulated economic impact: ${_formatCurrency(totalImpact)}", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
-                    pw.Text("• Total savings generated from repairs: ${_formatCurrency(ahorroGenerado)}", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
-                    pw.Text("• Repair efficiency: $eficiencia% ($reparadas of ${fugas.length} leaks resolved)", style: pw.TextStyle(fontSize: 10, color: colorTexto)),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    // ======== PÁGINA 2: Analysis Charts ========
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
-        build: (pw.Context context) {
+          final ahorroGenerado = fugas.where((f) => f.estado == 'Completada').fold(0.0, (sum, f) => sum + f.costoActual);
           final bajaCount = fugas.where((f) => f.severidad == 'Baja').length;
           final mediaCount = fugas.where((f) => f.severidad == 'Media').length;
           final altaCount = fugas.where((f) => f.severidad == 'Alta').length;
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             children: [
-              pw.Header(
-                level: 1,
-                child: pw.Text("2. Analysis Charts", style: pw.TextStyle(color: colorPrimario, fontSize: 20)),
-                decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 2))),
+              // ─── Header ───
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                decoration: pw.BoxDecoration(
+                  color: colorPrimario,
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text("LEAK HUNTER — Executive Report",
+                        style: pw.TextStyle(color: PdfColors.white, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Text("${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+                        style: pw.TextStyle(color: PdfColors.white70, fontSize: 10)),
+                  ],
+                ),
               ),
-              pw.SizedBox(height: 20),
+              pw.SizedBox(height: 16),
+
+              // ─── KPI Row ───
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Expanded(child: _buildKPIBox("Total\nFindings", "${fugas.length}", PdfColors.blueGrey700)),
+                  pw.SizedBox(width: 6),
+                  pw.Expanded(child: _buildKPIBox("Economic\nImpact", _formatCurrency(totalImpact), PdfColors.red700)),
+                  pw.SizedBox(width: 6),
+                  pw.Expanded(child: _buildKPIBox("Savings\nGenerated", _formatCurrency(ahorroGenerado), PdfColors.green700)),
+                  pw.SizedBox(width: 6),
+                  pw.Expanded(child: _buildKPIBox("Repaired", "$reparadas / ${fugas.length}", PdfColors.green700)),
+                  pw.SizedBox(width: 6),
+                  pw.Expanded(child: _buildKPIBox("Efficiency", "$eficiencia%", colorSecundario)),
+                ]
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                "* Cost \$0 = repaired same day as detection.",
+                style: pw.TextStyle(color: PdfColors.grey500, fontSize: 7, fontStyle: pw.FontStyle.italic),
+              ),
+              pw.SizedBox(height: 14),
+
+              // ─── Summary table ───
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                decoration: pw.BoxDecoration(
+                  color: colorFondoGris,
+                  borderRadius: pw.BorderRadius.circular(6),
+                  border: pw.Border.all(color: colorSecundario, width: 0.5),
+                ),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text("📋 Summary", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
+                          pw.SizedBox(height: 8),
+                          pw.Text("Total findings: ${fugas.length}", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
+                          pw.Text("Repaired: $reparadas  |  Active: ${fugas.length - reparadas}", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
+                          pw.Text("Economic impact: ${_formatCurrency(totalImpact)}", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
+                          pw.Text("Savings locked in: ${_formatCurrency(ahorroGenerado)}", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
+                          pw.Text("Repair efficiency: $eficiencia%", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 20),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text("⚠️  Severity Breakdown", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
+                          pw.SizedBox(height: 8),
+                          pw.Text("Low:     $bajaCount findings", style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#8BC34A'))),
+                          pw.Text("Medium:  $mediaCount findings", style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#FFC107'))),
+                          pw.Text("High:    $altaCount findings", style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#F44336'))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 14),
+
+              // ─── Analysis Charts header ───
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(color: colorSecundario, width: 1.5)),
+                ),
+                child: pw.Text("Analysis Charts",
+                    style: pw.TextStyle(color: colorPrimario, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 12),
+
+              // ─── Pie charts side by side ───
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
@@ -2917,10 +2953,10 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text("Current Status", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
-                        pw.SizedBox(height: 10),
+                        pw.Text("Current Status", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto, fontSize: 10)),
+                        pw.SizedBox(height: 8),
                         pw.Container(
-                          height: 140,
+                          height: 110,
                           child: pw.Chart(
                             grid: pw.PieGrid(),
                             datasets: [
@@ -2930,9 +2966,9 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                             ]
                           )
                         ),
-                        pw.SizedBox(height: 10),
+                        pw.SizedBox(height: 6),
                         pw.Wrap(
-                          spacing: 10, runSpacing: 5, alignment: pw.WrapAlignment.center,
+                          spacing: 8, runSpacing: 4, alignment: pw.WrapAlignment.center,
                           children: [
                             _buildPdfLegendItem('Damaged ($danadas)', PdfColor.fromHex('#F44336')),
                             _buildPdfLegendItem('In process ($enProceso)', PdfColor.fromHex('#FF9800')),
@@ -2942,15 +2978,15 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       ]
                     )
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 16),
                   pw.Expanded(
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text("Leak Severity", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto)),
-                        pw.SizedBox(height: 10),
+                        pw.Text("Leak Severity", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: colorTexto, fontSize: 10)),
+                        pw.SizedBox(height: 8),
                         pw.Container(
-                          height: 140,
+                          height: 110,
                           child: pw.Chart(
                             grid: pw.PieGrid(),
                             datasets: [
@@ -2960,9 +2996,9 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                             ]
                           )
                         ),
-                        pw.SizedBox(height: 10),
+                        pw.SizedBox(height: 6),
                         pw.Wrap(
-                          spacing: 10, runSpacing: 5, alignment: pw.WrapAlignment.center,
+                          spacing: 8, runSpacing: 4, alignment: pw.WrapAlignment.center,
                           children: [
                             _buildPdfLegendItem('Low ($bajaCount)', PdfColor.fromHex('#8BC34A')),
                             _buildPdfLegendItem('Medium ($mediaCount)', PdfColor.fromHex('#FFC107')),
