@@ -742,7 +742,7 @@ Widget _buildFormCol2(Map<String, dynamic> catMap) {
       const SizedBox(height: 12),
       TextFormField(
         controller: lMinController,
-        decoration: const InputDecoration(labelText: 'I/min (Estimación)'),
+        decoration: InputDecoration(labelText: '${AppConstants.getFluidUnit(_selectedFluido)} (Estimación)'),
         readOnly: true,
       ),
     ],
@@ -1393,7 +1393,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                 const SizedBox(height: 12),
                                 TextFormField(
                                   key: ValueKey("lMin_${editFluido}_$editCategoria"),
-                                  decoration: const InputDecoration(labelText: "I/min"),
+                                  decoration: InputDecoration(labelText: AppConstants.getFluidUnit(editFluido)),
                                   initialValue: "${props['l_min']}",
                                   readOnly: true,
                                 ),

@@ -2863,7 +2863,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                     pw.Text("LEAK HUNTER — Executive Report",
                         style: pw.TextStyle(color: PdfColors.white, fontSize: 14, fontWeight: pw.FontWeight.bold)),
                     pw.Text("${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
-                        style: pw.TextStyle(color: PdfColors.white70, fontSize: 10)),
+                        style: pw.TextStyle(color: PdfColors.grey300, fontSize: 10)),
                   ],
                 ),
               ),
