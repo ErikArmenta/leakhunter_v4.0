@@ -2673,14 +2673,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       }
 
       // Determinar la unidad de flujo por tipo de fluido
-      final String unidadFlujo;
-      if (f.tipoFuga == 'Aire') {
-        unidadFlujo = 'cfm';
-      } else if (f.tipoFuga == 'Helio') {
-        unidadFlujo = 'm³/min';
-      } else {
-        unidadFlujo = 'l/min';
-      }
+      final String unidadFlujo = AppConstants.getFluidUnit(f.tipoFuga);
 
       sheetObject.appendRow([
         xl.TextCellValue(f.id?.toString() ?? '0'),
@@ -2906,7 +2899,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text("📋 Summary", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
+                          pw.Text("[i] Summary", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
                           pw.SizedBox(height: 8),
                           pw.Text("Total findings: ${fugas.length}", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
                           pw.Text("Repaired: $reparadas  |  Active: ${fugas.length - reparadas}", style: pw.TextStyle(fontSize: 9, color: colorTexto)),
@@ -2921,7 +2914,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text("⚠️  Severity Breakdown", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
+                          pw.Text("(!) Severity Breakdown", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: colorPrimario)),
                           pw.SizedBox(height: 8),
                           pw.Text("Low:     $bajaCount findings", style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#8BC34A'))),
                           pw.Text("Medium:  $mediaCount findings", style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#FFC107'))),

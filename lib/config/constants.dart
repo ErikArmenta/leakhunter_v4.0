@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  // Minutos de operación anual para Aceite (248 días de trabajo de máquinas)
+  // Minutos de operación anual para Aceite y Agua (248 días laborados)
   static const double minutosAnualesAceite = 245520.0; // 248 días * 24h * 60min
-  // Minutos anuales para Helio y Aire (365 días completos del año)
+  static const double minutosAnualesAgua = 245520.0; // 248 días * 24h * 60min
+  // Minutos anuales para Helio, Aire y Gas Natural (365 días completos del año)
   static const double minutosAnualesHelioAire = 525600.0; // 365 días * 24h * 60min
+  static const double minutosAnualesGas = 525600.0; // 365 días * 24h * 60min
+
+  // Factor de demanda eléctrica para Aire: dem * costo_kWh / 60 = 0.0001909
+  static const double factorDemandaAire = 0.0001909;
+  // Costo por litro de agua (pesos/litro convertido a dólares o tarifa directa)
+  static const double costoPorLitroAgua = 6.14;
+  // Costo por metro cúbico de Gas Natural
+  static const double costoPorM3Gas = 0.3;
 
   static const Map<String, Map<String, dynamic>> relacionFugas = {
     // Aire: l_min almacenado en DB representa cfm (se muestra como cfm en la app)
-    // Fórmula: cfm * 525,600 min/año * 0.138 dlls/kWh
+    // Fórmula: cfm * 525,600 min/año (= valor1) * 0.0001909 (factor demanda kW/h)
     "Aire": {
-      "Fuga A": {"l_min": "2.0", "costo": 145065.0},
-      "Fuga B": {"l_min": "8.0", "costo": 580262.4},
-      "Fuga C": {"l_min": "20.5", "costo": 1486922.4},
+      "Fuga A": {"l_min": "2.0", "costo": 200.67},
+      "Fuga B": {"l_min": "8.0", "costo": 802.69},
+      "Fuga C": {"l_min": "20.5", "costo": 2056.90},
     },
     // Helio: l_min almacenado en DB representa m³/min (se muestra como m³/min en la app)
     // Fórmula: (m³/1440 min) * 525,600 min/año * 54.9 dlls/m³
@@ -21,12 +30,12 @@ class AppConstants {
       "Fuga B": {"l_min": "2.0", "costo": 40825.50},
       "Fuga C": {"l_min": "3.0", "costo": 60019.31},
     },
+    // Agua: l_min almacenado en DB representa l/min
+    // Fórmula: l/min * 245,520 min/año / 1000 (a m³) * 6.14 dlls/m³
     "Agua": {
-      "Fuga A": {"l_min": "0.01-0.05", "costo": 114.0},
-      "Fuga B": {"l_min": "0.05-0.10", "costo": 228.0},
-      "Fuga C": {"l_min": "0.10-0.20", "costo": 456.0},
-      "Fuga D": {"l_min": "0.20-1.50", "costo": 3400.0},
-      "Fuga E": {"l_min": "1.50-3.00", "costo": 6840.0},
+      "Fuga A": {"l_min": "1.5", "costo": 2261.23},
+      "Fuga B": {"l_min": "3.5", "costo": 5276.22},
+      "Fuga C": {"l_min": "5.0", "costo": 7537.46},
     },
     // Aceite: l_min almacenado en DB representa l/min
     // Fórmula: l_min * 245,520 min/año / 1000 (a litros) * 2.91 dlls/litro
@@ -35,10 +44,12 @@ class AppConstants {
       "Fuga B": {"l_min": "7.0", "costo": 5001.24},
       "Fuga C": {"l_min": "10.0", "costo": 7144.63},
     },
+    // Gas Natural: l_min almacenado en DB representa m³/min
+    // Fórmula: m³/min * 525,600 min/año / 1000 * 0.3 dlls/m³
     "Gas Natural": {
-      "Fuga A": {"l_min": "1-50", "costo": 450.0},
-      "Fuga B": {"l_min": "51-150", "costo": 1800.0},
-      "Fuga C": {"l_min": "151-500", "costo": 5200.0},
+      "Fuga A": {"l_min": "1.0", "costo": 157.68},
+      "Fuga B": {"l_min": "2.0", "costo": 315.36},
+      "Fuga C": {"l_min": "3.0", "costo": 473.04},
     },
     "Inspección (OK)": {
       "Sin Fuga": {"l_min": "0", "costo": 0.0},
@@ -81,9 +92,10 @@ class AppConstants {
       case "Aire":
         return "cfm"; // Cubic feet per minute
       case "Helio":
+      case "Gas Natural":
         return "m³/min"; // Metros cúbicos por minuto
       default:
-        return "l/min"; // Litros por minuto (Aceite, Agua, Gas Natural)
+        return "l/min"; // Litros por minuto (Aceite, Agua)
     }
   }
 }

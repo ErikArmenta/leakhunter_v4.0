@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/fuga.dart';
+import '../config/constants.dart';
 import 'web_stub.dart' if (dart.library.html) 'web_download_service.dart' as web_service;
 
 class ExportService {
@@ -64,14 +65,7 @@ class ExportService {
       }
 
       // Determinar la unidad de flujo por tipo de fluido
-      final String unidadFlujo;
-      if (f.tipoFuga == 'Aire') {
-        unidadFlujo = 'cfm';
-      } else if (f.tipoFuga == 'Helio') {
-        unidadFlujo = 'm³/min';
-      } else {
-        unidadFlujo = 'l/min';
-      }
+      final String unidadFlujo = AppConstants.getFluidUnit(f.tipoFuga);
 
       final ahorro = f.estado == 'Completada' ? (f.costoAnual - f.costoActual) : 0.0;
 

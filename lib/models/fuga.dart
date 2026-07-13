@@ -175,20 +175,13 @@ class Fuga {
     final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
     if (exactMinutes <= 0) return 0.0;
 
-    // Minutos anuales según el tipo de fluido:
-    // - Aceite: 245,520 min/año (248 días de operación de máquinas)
-    // - Helio y Aire: 525,600 min/año (365 días del año completo)
-    // - Demás fluidos: 365 * 24 * 60 = 525,600 min/año (genérico)
-    final double minutesInYear;
-    if (tipoFuga == 'Aceite') {
-      minutesInYear = 245520.0; // 248 días * 24h * 60min
-    } else if (tipoFuga == 'Helio' || tipoFuga == 'Aire') {
-      minutesInYear = 525600.0; // 365 días * 24h * 60min
-    } else {
-      minutesInYear = 365.0 * 24.0 * 60.0; // genérico 525,600
-    }
+    // costoAnual ya incluye los días laborados en su valor precalculado.
+    // Dividimos siempre entre los minutos reales del año (525,600)
+    // para que el costo escale proporcionalmente al tiempo real transcurrido.
+    // Así, tras 365 días reales -> costoActual = costoAnual exacto.
+    const double minutesInFullYear = 525600.0; // 365 * 24 * 60
 
-    final double costoPorMinuto = costoAnual / minutesInYear;
+    final double costoPorMinuto = costoAnual / minutesInFullYear;
     
     return costoPorMinuto * exactMinutes;
   }
@@ -208,7 +201,18 @@ class Fuga {
 
     final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
     if (exactMinutes <= 0) return 0.0;
-    return lMin * exactMinutes;
+
+    // Aplicar ratio de días laborados para que consumo sea consistente con costo.
+    // Aceite y Agua: 248 días laborados / 365 días totales
+    // Aire, Helio, Gas: operan 365/365 (ratio = 1.0)
+    final double workingRatio;
+    if (tipoFuga == 'Aceite' || tipoFuga == 'Agua') {
+      workingRatio = 245520.0 / 525600.0; // ~0.467 (248 de 365 días)
+    } else {
+      workingRatio = 1.0;
+    }
+
+    return lMin * exactMinutes * workingRatio;
   }
 
   double get consumoActualM3 {
@@ -226,8 +230,21 @@ class Fuga {
 
     final double exactMinutes = fin.difference(inicio).inMinutes.toDouble();
     if (exactMinutes <= 0) return 0.0;
-    // lMin is Liters per minute. 1000 Liters = 1 m^3
-    return (lMin / 1000.0) * exactMinutes;
+
+    // Aplicar ratio de días laborados
+    final double workingRatio;
+    if (tipoFuga == 'Aceite' || tipoFuga == 'Agua') {
+      workingRatio = 245520.0 / 525600.0; // ~0.467 (248 de 365 días)
+    } else {
+      workingRatio = 1.0;
+    }
+
+    // Para Gas Natural y Helio: lMin ya está en m³/min, se usa directo
+    if (tipoFuga == 'Gas Natural' || tipoFuga == 'Helio') {
+      return lMin * exactMinutes * workingRatio; // lMin ya es m³/min
+    }
+    // Agua y otros: lMin es Litros/minuto. 1000 Litros = 1 m³
+    return (lMin / 1000.0) * exactMinutes * workingRatio;
   }
 
   double get consumoActualKWh {
