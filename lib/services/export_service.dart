@@ -57,11 +57,11 @@ class ExportService {
     for (var f in fugas) {
       String consumoAcumStr = '';
       if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural') {
-        consumoAcumStr = '${f.consumoActualM3.toStringAsFixed(2)} m³';
+        consumoAcumStr = '${f.consumoActualM3Str} m³';
       } else if (f.tipoFuga == 'Aceite') {
-        consumoAcumStr = '${f.consumoActualLitros.toStringAsFixed(2)} Lts';
+        consumoAcumStr = '${f.consumoActualLitrosStr} Lts';
       } else if (f.tipoFuga == 'Aire') {
-        consumoAcumStr = '${f.consumoActualKWh.toStringAsFixed(2)} kWh';
+        consumoAcumStr = '${f.consumoActualKWhStr} kWh';
       }
 
       // Determinar la unidad de flujo por tipo de fluido

@@ -207,21 +207,21 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
                     if (widget.fuga.tipoFuga == 'Helio' || widget.fuga.tipoFuga == 'Agua' || widget.fuga.tipoFuga == 'Gas Natural') ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Consumo Acumulado: ${widget.fuga.consumoActualM3.toStringAsFixed(2)} m³",
+                        "Consumo Acumulado: ${widget.fuga.consumoActualM3Str} m³",
                         style: const TextStyle(color: Colors.cyan, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],
                     if (widget.fuga.tipoFuga == 'Aceite') ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Consumo Acumulado: ${widget.fuga.consumoActualLitros.toStringAsFixed(2)} Lts",
+                        "Consumo Acumulado: ${widget.fuga.consumoActualLitrosStr} Lts",
                         style: const TextStyle(color: Colors.orangeAccent, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],
                     if (widget.fuga.tipoFuga == 'Aire') ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Consumo Eléctrico: ${widget.fuga.consumoActualKWh.toStringAsFixed(2)} kWh",
+                        "Consumo Eléctrico: ${widget.fuga.consumoActualKWhStr} kWh",
                         style: const TextStyle(color: Colors.yellowAccent, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ],

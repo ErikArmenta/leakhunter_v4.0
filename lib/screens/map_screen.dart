@@ -635,19 +635,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 if (f.tipoFuga == 'Helio' || f.tipoFuga == 'Agua' || f.tipoFuga == 'Gas Natural')
                   _buildDarkRow(
                     "Consumo Acum:",
-                    "${f.consumoActualM3.toStringAsFixed(2)} m³",
+                    "${f.consumoActualM3Str} m³",
                     valueColor: Colors.cyan,
                   ),
                 if (f.tipoFuga == 'Aceite')
                   _buildDarkRow(
                     "Consumo Acum:",
-                    "${f.consumoActualLitros.toStringAsFixed(2)} Lts",
+                    "${f.consumoActualLitrosStr} Lts",
                     valueColor: Colors.orangeAccent,
                   ),
                 if (f.tipoFuga == 'Aire')
                   _buildDarkRow(
                     "Consumo Eléctrico:",
-                    "${f.consumoActualKWh.toStringAsFixed(2)} kWh",
+                    "${f.consumoActualKWhStr} kWh",
                     valueColor: Colors.yellowAccent,
                   ),
                 _buildDarkRow("Severidad:", f.severidad, valueColor: colorSev),

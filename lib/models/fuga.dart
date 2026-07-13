@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class Fuga {
   final int? id;
   final double x1;
@@ -254,6 +256,21 @@ class Fuga {
     final costoMXN = costoActual * 19.0;
     // Calcular kWh (Precio por kWh: 2.4 MXN)
     return costoMXN / 2.4;
+  }
+
+  String get consumoActualLitrosStr {
+    final format = NumberFormat('#,##0.00', 'en_US');
+    return format.format(consumoActualLitros);
+  }
+
+  String get consumoActualM3Str {
+    final format = NumberFormat('#,##0.00', 'en_US');
+    return format.format(consumoActualM3);
+  }
+
+  String get consumoActualKWhStr {
+    final format = NumberFormat('#,##0.00', 'en_US');
+    return format.format(consumoActualKWh);
   }
 
   int get diasTranscurridos {
