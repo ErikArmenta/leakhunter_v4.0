@@ -22,7 +22,7 @@ class _FugaDetailMapScreenState extends State<FugaDetailMapScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (mounted) {
         setState(() {});
       }
