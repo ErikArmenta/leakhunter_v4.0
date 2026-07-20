@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/constants.dart';
+import '../config/app_config.dart';
 
 final authFluidsProvider = Provider<List<String>>((ref) {
-  return AppConstants.fluidos.keys.toList();
+  final config = ref.watch(appConfigProvider);
+  return config.incidentTypes.keys.toList();
 });
 
 class FluidFilterNotifier extends Notifier<List<String>> {
   @override
-  List<String> build() => ref.read(authFluidsProvider);
+  List<String> build() => ref.watch(authFluidsProvider);
   void updateFilters(List<String> newFilters) => state = newFilters;
 }
 final fluidFilterProvider = NotifierProvider<FluidFilterNotifier, List<String>>(() => FluidFilterNotifier());

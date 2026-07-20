@@ -8,6 +8,8 @@ import 'management_screen.dart';
 import 'report_screen.dart';
 import 'admin_users_screen.dart';
 import '../providers/fugas_provider.dart';
+import '../config/app_config.dart';
+import 'mode_selector_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -75,6 +77,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
     final String role = authState.role;
     final bool isInspector = role == 'Inspector';
     final bool isAdmin = role == 'Admin Principal';
+    
+    final appConfig = ref.watch(appConfigProvider);
 
     final List<Widget> dynamicPages = [
       const MapScreen(),
@@ -100,8 +104,18 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
 
     return Scaffold(
       appBar: isMobile ? AppBar(
-        title: Text('🏭💧 ${selectedPlant?.name ?? 'Leak Hunter'}'),
+        title: Text('${appConfig.appTitle} - ${selectedPlant?.name ?? ''}'),
+        backgroundColor: appConfig.primaryColor.withOpacity(0.2),
         actions: [
+          IconButton(
+            icon: Icon(appConfig.icon),
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const ModeSelectorScreen()),
+              );
+            },
+            tooltip: 'Cambiar Módulo',
+          ),
           _buildPlantSelector(ref, plants, selectedPlant),
         ],
       ) : null,
@@ -157,7 +171,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                         Icon(
                           Icons.menu,
                           size: 20,
-                          color: Colors.blueAccent,
+                          color: appConfig.primaryColor,
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -224,13 +238,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: _isDragging 
-                                ? Colors.blueAccent.withOpacity(0.6) 
-                                : Colors.blueAccent.withOpacity(0.3),
+                                ? appConfig.primaryColor.withOpacity(0.6) 
+                                : appConfig.primaryColor.withOpacity(0.3),
                             width: _isDragging ? 2 : 1,
                           ),
                           boxShadow: _isDragging ? [
                             BoxShadow(
-                              color: Colors.blueAccent.withOpacity(0.3),
+                              color: appConfig.primaryColor.withOpacity(0.3),
                               blurRadius: 20,
                               spreadRadius: 2,
                             ),
@@ -248,7 +262,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.blueAccent.withOpacity(0.05),
+                                    appConfig.primaryColor.withOpacity(0.05),
                                   ],
                                 ),
                               ),
@@ -260,7 +274,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                     child: Image.asset(
                                       'assets/images/EA_2.png',
                                       height: 65,
-                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.factory, size: 45, color: Colors.blue),
+                                      errorBuilder: (context, error, stackTrace) => Icon(appConfig.icon, size: 45, color: appConfig.primaryColor),
                                     ),
                                   ),
                                   // Plant Selector
@@ -271,7 +285,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                       color: Colors.black.withOpacity(0.3),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: Colors.blueAccent.withOpacity(0.2),
+                                        color: appConfig.primaryColor.withOpacity(0.2),
                                       ),
                                     ),
                                     child: ConstrainedBox(
@@ -282,7 +296,18 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                       child: _buildPlantSelector(ref, plants, selectedPlant),
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    child: IconButton(
+                                      icon: Icon(appConfig.icon, color: appConfig.primaryColor),
+                                      onPressed: () {
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(builder: (_) => const ModeSelectorScreen()),
+                                        );
+                                      },
+                                      tooltip: 'Cambiar Módulo',
+                                    ),
+                                  ),
                                   Expanded(
                                     child: NavigationRail(
                                       selectedIndex: _selectedIndex,
@@ -298,8 +323,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                         });
                                       },
                                       labelType: NavigationRailLabelType.all,
-                                      selectedLabelTextStyle: const TextStyle(
-                                        color: Colors.blueAccent,
+                                      selectedLabelTextStyle: TextStyle(
+                                        color: appConfig.primaryColor,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                       ),
@@ -351,25 +376,25 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: Colors.blueAccent.withOpacity(0.15),
+                                          color: appConfig.primaryColor.withOpacity(0.15),
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
-                                            color: Colors.blueAccent.withOpacity(0.5),
+                                            color: appConfig.primaryColor.withOpacity(0.5),
                                           ),
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
                                               Icons.chevron_left,
                                               size: 16,
-                                              color: Colors.blueAccent,
+                                              color: appConfig.primaryColor,
                                             ),
                                             SizedBox(width: 4),
                                             Text(
                                               'Ocultar',
                                               style: TextStyle(
-                                                color: Colors.blueAccent,
+                                                color: appConfig.primaryColor,
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -442,7 +467,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
         elevation: 8,
         backgroundColor: const Color(0xFF161a22),
         surfaceTintColor: Colors.transparent,
-        indicatorColor: Colors.blueAccent.withOpacity(0.2),
+        indicatorColor: appConfig.primaryColor.withOpacity(0.2),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: [
           const NavigationDestination(
@@ -520,7 +545,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
       value: selectedPlant,
       dropdownColor: const Color(0xFF161a22),
       underline: const SizedBox(),
-      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.blueAccent, size: 18),
+      icon: Icon(Icons.keyboard_arrow_down, color: ref.watch(appConfigProvider).primaryColor, size: 18),
       style: const TextStyle(color: Colors.white, fontSize: 13),
       isExpanded: true,
       onChanged: (Plant? newValue) {

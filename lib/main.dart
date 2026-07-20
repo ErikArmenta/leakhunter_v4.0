@@ -6,11 +6,15 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/supabase_config.dart';
 import 'config/theme.dart';
+import 'config/constants.dart';
+import 'config/app_config.dart';
 import 'screens/main_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/qr_edit_screen.dart';
+import 'screens/mode_selector_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/fugas_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // 2. Definimos la clase para ignorar errores de certificados SSL
 class MyHttpOverrides extends HttpOverrides {
@@ -52,21 +56,29 @@ void main() async {
     }
   }
 
+  final prefs = await SharedPreferences.getInstance();
+  final hasSelectedMode = prefs.getString('app_mode_key') != null;
+
   runApp(
     ProviderScope(
       overrides: [
         pendingFugaIdProvider.overrideWith(() => PendingFugaIdNotifier(initialFugaId)),
       ],
-      child: const LeakHunterApp(),
+      child: LeakHunterApp(hasSelectedMode: hasSelectedMode),
     ),
   );
 }
 
 class LeakHunterApp extends ConsumerWidget {
-  const LeakHunterApp({super.key});
+  final bool hasSelectedMode;
+
+  const LeakHunterApp({super.key, required this.hasSelectedMode});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appConfig = ref.watch(appConfigProvider);
+    AppConstants.setConfig(appConfig);
+
     final authState = ref.watch(authProvider);
     final pendingId = ref.watch(pendingFugaIdProvider);
 
@@ -92,7 +104,7 @@ class LeakHunterApp extends ConsumerWidget {
       title: 'Leak Hunter v4.2',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const MainScreen(),
+      home: hasSelectedMode ? const MainScreen() : const ModeSelectorScreen(),
     );
   }
 }

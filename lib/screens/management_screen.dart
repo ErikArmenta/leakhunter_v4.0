@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../providers/fugas_provider.dart';
 import '../providers/auth_provider.dart';
 import '../config/constants.dart';
+import '../config/app_config.dart';
+import '../providers/app_mode_provider.dart';
 import '../models/fuga.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -108,7 +110,8 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
   }
 
   void _updateCategoriaBaseOnFluido() {
-    final catMap = AppConstants.relacionFugas[_selectedFluido] ?? AppConstants.relacionFugas['Aire']!;
+    final catMap = AppConstants.relacionFugas[_selectedFluido] ?? 
+                   (AppConstants.relacionFugas.isNotEmpty ? AppConstants.relacionFugas.values.first : {});
     if (catMap.isNotEmpty) {
       _selectedCategoria = catMap.keys.first;
     } else {
@@ -164,6 +167,7 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
     final authState = ref.watch(authProvider);
     final isAdmin = authState.role == 'Admin Principal';
     final screenWidth = MediaQuery.of(context).size.width;
+    final config = ref.watch(appConfigProvider);
 
     return RawKeyboardListener(
       focusNode: _focusNode,
@@ -251,18 +255,18 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
                       children: [
                         if (isAdmin) ...[
                           SwitchListTile(
-                            title: const Text("📍 Modo Reubicar Fugas", style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 13)),
-                            subtitle: const Text("Selecciona una fuga, luego haz clic en su nueva ubicación real.", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                            title: Text("📍 Modo Reubicar ${config.mode == AppMode.fugas ? 'Fugas' : config.mode == AppMode.fallas ? 'Fallas' : 'Riesgos'}", style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                            subtitle: Text("Selecciona ${config.mode == AppMode.fugas ? 'una fuga' : config.mode == AppMode.fallas ? 'una falla' : 'un riesgo'}, luego haz clic en su nueva ubicación real.", style: const TextStyle(fontSize: 11, color: Colors.white70)),
                             value: _modoReubicacion,
                             activeColor: Colors.orangeAccent,
                             contentPadding: EdgeInsets.zero,
                             onChanged: (val) {
-                              setState(() {
-                                _modoReubicacion = val;
-                                _fugaToMove = null;
-                                _point1 = null;
-                                _point2 = null;
-                              });
+                               setState(() {
+                                 _modoReubicacion = val;
+                                 _fugaToMove = null;
+                                 _point1 = null;
+                                 _point2 = null;
+                               });
                             },
                           ),
                           if (_fugaToMove != null)
@@ -274,16 +278,16 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
                                 children: [
                                   const Icon(Icons.touch_app, color: Colors.orangeAccent),
                                   const SizedBox(width: 8),
-                                  Expanded(child: Text("Fuga ${_fugaToMove!.idMaquina} seleccionada. ¡Haz clic en el mapa para soltarla!", style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 12))),
+                                  Expanded(child: Text("Registro ${_fugaToMove!.idMaquina} seleccionado. ¡Haz clic en el mapa para soltarlo!", style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 12))),
                                 ],
                               ),
                             ),
                           const Divider(color: Colors.white24, height: 16),
                         ],
-                        const Text("Registro de Fuga", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text("Registro de ${config.mode == AppMode.fugas ? 'Fuga' : config.mode == AppMode.fallas ? 'Falla' : 'Riesgo'}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const Text("Selecciona 2 puntos en el mapa maestro de fondo.", style: TextStyle(color: Colors.grey)),
                         const SizedBox(height: 10),
-                        _buildRegistrationForm(),
+                        _buildRegistrationForm(config),
                         const SizedBox(height: 30),
                         const Text("📋 Historial de Gestión", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 10),
@@ -480,7 +484,7 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
                 height: 24,
                 child: Tooltip(
                   richMessage: TextSpan(
-                    text: "$emoji ${f.area}\n🆔 ${f.idMaquina}\n${f.tipoFuga} | ${f.severidad}\nEstado: ${f.estado}${f.comentarios.isNotEmpty ? '\n💬 ${f.comentarios.length > 40 ? '${f.comentarios.substring(0, 40)}...' : f.comentarios}' : ''}",
+                    text: "$emoji ${f.area}\n🆔 ${f.idMaquina}\n${f.tipoFuga} | ${f.severidad}\nEstado: ${f.estado}${f.comentarios.isNotEmpty ? '\n💬 Detección: ${f.comentarios.length > 40 ? '${f.comentarios.substring(0, 40)}...' : f.comentarios}' : ''}${f.comentariosReparacion.isNotEmpty ? '\n🔧 Reparación: ${f.comentariosReparacion.length > 40 ? '${f.comentariosReparacion.substring(0, 40)}...' : f.comentariosReparacion}' : ''}",
                     style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                   decoration: BoxDecoration(
@@ -533,11 +537,20 @@ class _ManagementScreenState extends ConsumerState<ManagementScreen> {
       );
   }
 
-Widget _buildRegistrationForm() {
-  final catMap = AppConstants.relacionFugas[_selectedFluido] ?? AppConstants.relacionFugas['Aire']!;
+Widget _buildRegistrationForm(AppConfig config) {
+  final catMap = AppConstants.relacionFugas[_selectedFluido] ?? 
+                 (AppConstants.relacionFugas.isNotEmpty ? AppConstants.relacionFugas.values.first : {});
   final validCategories = catMap.keys.toList();
   if (!validCategories.contains(_selectedCategoria)) {
     _selectedCategoria = validCategories.first;
+  }
+  
+  // Ensure valid state and severity
+  if (!config.severityLevels.contains(_severidad)) {
+    _severidad = config.severityLevels.first;
+  }
+  if (!config.statusOptions.contains(_estado)) {
+    _estado = config.statusOptions.first;
   }
   
   final df = DateFormat('dd/MM/yyyy');
@@ -557,21 +570,21 @@ Widget _buildRegistrationForm() {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _buildFormCol1(catMap, validCategories, df)),
+                  Expanded(child: _buildFormCol1(catMap, validCategories, df, config)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildFormCol2(catMap)),
+                  Expanded(child: _buildFormCol2(catMap, config)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildFormCol3(catMap)),
+                  Expanded(child: _buildFormCol3(catMap, config)),
                 ],
               );
             } else {
               return Column(
                 children: [
-                  _buildFormCol1(catMap, validCategories, df),
+                  _buildFormCol1(catMap, validCategories, df, config),
                   const SizedBox(height: 12),
-                  _buildFormCol2(catMap),
+                  _buildFormCol2(catMap, config),
                   const SizedBox(height: 12),
-                  _buildFormCol3(catMap),
+                  _buildFormCol3(catMap, config),
                 ],
               );
             }
@@ -620,7 +633,7 @@ Widget _buildRegistrationForm() {
                 icon: _isUploading 
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.save),
-                label: Text(_isUploading ? "Subiendo fotos..." : "🚰📝 Registrar fuga"),
+                label: Text(_isUploading ? "Subiendo fotos..." : "📝 Registrar hallazgo"),
               ),
             ),
             if (_point1 != null || _point2 != null) ...[
@@ -654,11 +667,11 @@ Widget _buildRegistrationForm() {
   );
 }
 
-Widget _buildFormCol1(Map<String, dynamic> catMap, List<String> validCategories, DateFormat df) {
+Widget _buildFormCol1(Map<String, dynamic> catMap, List<String> validCategories, DateFormat df, AppConfig config) {
   return Column(
     children: [
       DropdownButtonFormField<String>(
-        decoration: const InputDecoration(labelText: 'Fluido'),
+        decoration: InputDecoration(labelText: config.incidentTypeLabel),
         value: _selectedFluido,
         items: AppConstants.fluidos.keys.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
         onChanged: (val) {
@@ -715,7 +728,7 @@ Widget _buildFormCol1(Map<String, dynamic> catMap, List<String> validCategories,
   );
 }
 
-Widget _buildFormCol2(Map<String, dynamic> catMap) {
+Widget _buildFormCol2(Map<String, dynamic> catMap, AppConfig config) {
   // Recalcular props cada vez que se construye
   final props = catMap[_selectedCategoria] ?? {"l_min": "0", "costo": 0.0};
   
@@ -739,17 +752,19 @@ Widget _buildFormCol2(Map<String, dynamic> catMap) {
         controller: areaPlantaController,
         decoration: const InputDecoration(labelText: 'Área Planta'),
       ),
-      const SizedBox(height: 12),
-      TextFormField(
-        controller: lMinController,
-        decoration: InputDecoration(labelText: '${AppConstants.getFluidUnit(_selectedFluido)} (Estimación)'),
-        readOnly: true,
-      ),
+      if (config.usesFluids) ...[
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: lMinController,
+          decoration: InputDecoration(labelText: '${AppConstants.getFluidUnit(_selectedFluido)} (Estimación)'),
+          readOnly: true,
+        ),
+      ]
     ],
   );
 }
 
-Widget _buildFormCol3(Map<String, dynamic> catMap) {
+Widget _buildFormCol3(Map<String, dynamic> catMap, AppConfig config) {
   // Recalcular props cada vez que se construye
   final props = catMap[_selectedCategoria] ?? {"l_min": "0", "costo": 0.0};
 
@@ -764,7 +779,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
       DropdownButtonFormField<String>(
         decoration: const InputDecoration(labelText: 'Severidad Visual'),
         value: _severidad,
-        items: ["Baja", "Media", "Alta"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+        items: config.severityLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
         onChanged: (val) {
           setState(() {
             _severidad = val!;
@@ -772,12 +787,14 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
           });
         },
       ),
-      const SizedBox(height: 12),
-      TextFormField(
-        controller: costoController,
-        decoration: const InputDecoration(labelText: 'Costo por año (USD)'),
-        readOnly: true,
-      ),
+      if (config.usesFluids) ...[
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: costoController,
+          decoration: const InputDecoration(labelText: 'Costo por año (USD)'),
+          readOnly: true,
+        ),
+      ],
       const SizedBox(height: 12),
       DropdownButtonFormField<String>(
         decoration: const InputDecoration(labelText: 'Tipo de Instalación'),
@@ -796,7 +813,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
         value: _estado,
         items: _selectedFluido == 'Inspección (OK)' 
           ? [const DropdownMenuItem(value: 'Completada', child: Text('Completada'))]
-          : ["En proceso de reparar", "Dañada", "Completada"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          : config.statusOptions.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
         onChanged: (val) {
           setState(() {
             _estado = val!;
@@ -969,6 +986,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
       comentariosReparacion: _comentariosReparacion,
       fotoDeteccion: urlDeteccion,
       fotoReparacion: urlReparacion,
+      modo: ref.read(appModeProvider).name,
     );
     
     await ref.read(fugasProvider.notifier).insertFuga(newFuga);
@@ -1062,7 +1080,10 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                     Text("🆔 ${f.idMaquina} | 📍 ${f.area}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     Text("Estado: ${f.estado}"),
                     if (f.comentarios.isNotEmpty)
-                      Text("💬 ${f.comentarios.length > 30 ? '${f.comentarios.substring(0, 30)}...' : f.comentarios}",
+                      Text("💬 Detección: ${f.comentarios.length > 30 ? '${f.comentarios.substring(0, 30)}...' : f.comentarios}",
+                        style: const TextStyle(fontSize: 11, color: Colors.white54, fontStyle: FontStyle.italic)),
+                    if (f.comentariosReparacion.isNotEmpty)
+                      Text("🔧 Reparación: ${f.comentariosReparacion.length > 30 ? '${f.comentariosReparacion.substring(0, 30)}...' : f.comentariosReparacion}",
                         style: const TextStyle(fontSize: 11, color: Colors.white54, fontStyle: FontStyle.italic)),
                     const Spacer(),
                     Row(
@@ -1209,7 +1230,6 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -1287,6 +1307,7 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
 
   // ==================== EDIT DIALOG ====================
   void _showEditDialog(Fuga f) {
+    final config = ref.read(appConfigProvider);
     // Pre-fill with current data
     String editFluido = f.tipoFuga;
     String editCategoria = f.categoria;
@@ -1305,19 +1326,20 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
     bool isUploading = false;
 
     // Ensure valid values
-    final validSeverities = ["Baja", "Media", "Alta"];
-    if (!validSeverities.contains(editSeveridad)) editSeveridad = "Media";
+    final validSeverities = config.severityLevels;
+    if (!validSeverities.contains(editSeveridad)) editSeveridad = validSeverities.first;
     final validUbicaciones = ["Terrestre", "Aérea"];
     if (!validUbicaciones.contains(editUbicacion)) editUbicacion = "Terrestre";
-    final validEstados = ["En proceso de reparar", "Dañada", "Completada"];
-    if (!validEstados.contains(editEstado)) editEstado = "Dañada";
+    final validEstados = config.statusOptions;
+    if (!validEstados.contains(editEstado)) editEstado = validEstados.first;
 
     showDialog(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final catMap = AppConstants.relacionFugas[editFluido] ?? AppConstants.relacionFugas['Aire']!;
+            final catMap = config.relacionFugas[editFluido] ?? 
+                           (config.relacionFugas.isNotEmpty ? config.relacionFugas.values.first : {});
             final validCategories = catMap.keys.toList();
             if (!validCategories.contains(editCategoria)) {
               editCategoria = validCategories.first;
@@ -1353,16 +1375,17 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                             child: Column(
                               children: [
                                 DropdownButtonFormField<String>(
-                                  decoration: const InputDecoration(labelText: "Fluido"),
+                                  decoration: InputDecoration(labelText: config.incidentTypeLabel),
                                   value: editFluido,
-                                  items: AppConstants.fluidos.keys.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                                  items: config.incidentTypes.keys.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                                   onChanged: (val) {
                                     setDialogState(() {
                                       editFluido = val!;
                                       if (editFluido == 'Inspección (OK)') {
                                         editEstado = 'Completada';
                                       }
-                                      final newCatMap = AppConstants.relacionFugas[editFluido] ?? AppConstants.relacionFugas['Aire']!;
+                                      final newCatMap = config.relacionFugas[editFluido] ?? 
+                                                        (config.relacionFugas.isNotEmpty ? config.relacionFugas.values.first : {});
                                       if (newCatMap.isNotEmpty && !newCatMap.keys.contains(editCategoria)) {
                                         editCategoria = newCatMap.keys.first;
                                       }
@@ -1390,13 +1413,15 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                     setDialogState(() => editCategoria = val!);
                                   },
                                 ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  key: ValueKey("lMin_${editFluido}_$editCategoria"),
-                                  decoration: InputDecoration(labelText: AppConstants.getFluidUnit(editFluido)),
-                                  initialValue: "${props['l_min']}",
-                                  readOnly: true,
-                                ),
+                                if (config.usesFluids) ...[
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    key: ValueKey("lMin_${editFluido}_$editCategoria"),
+                                    decoration: InputDecoration(labelText: AppConstants.getFluidUnit(editFluido)),
+                                    initialValue: "${props['l_min']}",
+                                    readOnly: true,
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -1417,13 +1442,15 @@ Widget _buildFormCol3(Map<String, dynamic> catMap) {
                                   items: validSeverities.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                                   onChanged: (val) => setDialogState(() => editSeveridad = val!),
                                 ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  key: ValueKey("costo_${editFluido}_$editCategoria"),
-                                  decoration: const InputDecoration(labelText: "Costo/Año (USD)"),
-                                  initialValue: "${props['costo']}",
-                                  readOnly: true,
-                                ),
+                                if (config.usesFluids) ...[
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    key: ValueKey("costo_${editFluido}_$editCategoria"),
+                                    decoration: const InputDecoration(labelText: "Costo/Año (USD)"),
+                                    initialValue: "${props['costo']}",
+                                    readOnly: true,
+                                  ),
+                                ],
                                 const SizedBox(height: 12),
                                 DropdownButtonFormField<String>(
                                   decoration: const InputDecoration(labelText: "Instalación"),

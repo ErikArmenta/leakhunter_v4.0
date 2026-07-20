@@ -7,9 +7,9 @@ import '../config/supabase_config.dart';
 class SupabaseService {
   final _client = SupabaseConfig.client;
 
-  Future<List<Fuga>> getFugas() async {
+  Future<List<Fuga>> getFugas(String modo) async {
     try {
-      final response = await _client.from('fugas').select();
+      final response = await _client.from('fugas').select().eq('modo', modo);
       return (response as List).map((e) => Fuga.fromJson(e)).toList();
     } catch (e) {
       print('Error fetching fugas: $e');

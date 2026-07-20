@@ -2,20 +2,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/fuga.dart';
 import '../services/supabase_service.dart';
 import 'filter_provider.dart';
+import 'app_mode_provider.dart';
 
 final supabaseServiceProvider = Provider((ref) => SupabaseService());
 
 class FugasNotifier extends AsyncNotifier<List<Fuga>> {
   late SupabaseService _service;
+  late String _currentMode;
 
   @override
   Future<List<Fuga>> build() async {
     _service = ref.watch(supabaseServiceProvider);
+    _currentMode = ref.watch(appModeProvider).name;
     return _loadFugas();
   }
 
   Future<List<Fuga>> _loadFugas() async {
-    final data = await _service.getFugas();
+    final data = await _service.getFugas(_currentMode);
     _updateFilterDefaults(data);
     return data;
   }

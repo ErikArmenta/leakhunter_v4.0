@@ -385,6 +385,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ubicacion: f.ubicacion,
               severidad: f.severidad,
               comentarios: f.comentarios,
+              comentariosReparacion: f.comentariosReparacion,
             ),
           ),
         ),
@@ -440,12 +441,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
     required String ubicacion,
     required String severidad,
     required String comentarios,
+    required String comentariosReparacion,
   }) {
     final ubiEmoji = ubicacion == 'Terrestre' ? '🚜' : '☁️';
 
     // Custom dark tooltip content
     final tooltipMessage =
-        "$emoji $area\n$ubiEmoji Instalación: $ubicacion\nSeveridad: $severidad${comentarios.isNotEmpty ? '\n💬 ${comentarios.length > 50 ? '${comentarios.substring(0, 50)}...' : comentarios}' : ''}";
+        "$emoji $area\n$ubiEmoji Instalación: $ubicacion\nSeveridad: $severidad${comentarios.isNotEmpty ? '\n💬 Detección: ${comentarios.length > 50 ? '${comentarios.substring(0, 50)}...' : comentarios}' : ''}${comentariosReparacion.isNotEmpty ? '\n🔧 Reparación: ${comentariosReparacion.length > 50 ? '${comentariosReparacion.substring(0, 50)}...' : comentariosReparacion}' : ''}";
 
     // Custom dark tooltip content
 
@@ -676,6 +678,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         const SizedBox(height: 4),
                         Text(
                           f.comentarios,
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (f.comentariosReparacion.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1d2129),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF2d323d)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "🔧 Comentarios de Reparación:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          f.comentariosReparacion,
                           style: const TextStyle(
                             color: Colors.white60,
                             fontSize: 13,

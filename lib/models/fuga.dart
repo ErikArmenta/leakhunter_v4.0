@@ -20,6 +20,7 @@ class Fuga {
   final String comentariosReparacion;
   final String? fotoDeteccion;
   final String? fotoReparacion;
+  final String modo;
 
   Fuga({
     this.id,
@@ -41,6 +42,7 @@ class Fuga {
     this.comentariosReparacion = '',
     this.fotoDeteccion,
     this.fotoReparacion,
+    this.modo = 'fugas',
   });
 
   factory Fuga.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,7 @@ class Fuga {
       comentariosReparacion: json['comentarios_reparacion'] ?? '',
       fotoDeteccion: json['foto_deteccion'],
       fotoReparacion: json['foto_reparacion'],
+      modo: json['modo'] ?? 'fugas',
     );
   }
 
@@ -88,6 +91,7 @@ class Fuga {
       'comentarios_reparacion': comentariosReparacion,
       if (fotoDeteccion != null) 'foto_deteccion': fotoDeteccion,
       if (fotoReparacion != null) 'foto_reparacion': fotoReparacion,
+      'modo': modo,
     };
   }
 
@@ -111,6 +115,7 @@ class Fuga {
     String? comentariosReparacion,
     String? fotoDeteccion,
     String? fotoReparacion,
+    String? modo,
   }) {
     return Fuga(
       id: id ?? this.id,
@@ -132,6 +137,7 @@ class Fuga {
       comentariosReparacion: comentariosReparacion ?? this.comentariosReparacion,
       fotoDeteccion: fotoDeteccion ?? this.fotoDeteccion,
       fotoReparacion: fotoReparacion ?? this.fotoReparacion,
+      modo: modo ?? this.modo,
     );
   }
 
