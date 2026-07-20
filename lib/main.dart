@@ -84,7 +84,7 @@ class LeakHunterApp extends ConsumerWidget {
 
     if (authState.user == null) {
       return MaterialApp(
-        title: 'Leak Hunter v4.2',
+        title: 'Leak Hunter v5',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: const LoginScreen(),
@@ -93,7 +93,7 @@ class LeakHunterApp extends ConsumerWidget {
 
     if (pendingId != null) {
       return MaterialApp(
-        title: 'Leak Hunter v4.2',
+        title: 'Leak Hunter v5',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: QREditScreen(fugaId: pendingId),
@@ -101,7 +101,7 @@ class LeakHunterApp extends ConsumerWidget {
     }
 
     return MaterialApp(
-      title: 'Leak Hunter v4.2',
+      title: 'Leak Hunter v5',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: hasSelectedMode ? const MainScreen() : const ModeSelectorScreen(),

@@ -2592,7 +2592,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
       child: const Column(
         children: [
           Text(
-            "🏭💧 Leak Hunter Digital Twin v4.2",
+            "🏭💧 Leak Hunter Digital Twin v5",
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -2817,7 +2817,7 @@ Widget _buildCoverageChart(List<Fuga> fugas) {
                    bottom: 50, left: 0, right: 0,
                    child: pw.Column(
                      children: [
-                       pw.Text("Leak Hunter Digital Twin v4.2", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 12)),
+                       pw.Text("Leak Hunter Digital Twin v5", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 12)),
                        pw.Text("Automated report generated for executive use", style: pw.TextStyle(color: PdfColors.grey600, fontSize: 10)),
                      ]
                    )
