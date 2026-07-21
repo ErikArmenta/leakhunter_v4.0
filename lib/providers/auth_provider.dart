@@ -152,7 +152,14 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
-    await _supabase.auth.signOut();
+    try {
+      await _supabase.auth.signOut();
+    } catch (e) {
+      print('[AuthProvider] Error during logout: $e');
+    } finally {
+      // Forzar el estado a null localmente para asegurar el redireccionamiento
+      state = AuthState();
+    }
   }
 }
 
