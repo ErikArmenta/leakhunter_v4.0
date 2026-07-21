@@ -151,14 +151,13 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
-    state = state.copyWith(isLoading: true);
+    // Forzar el estado a null localmente ANTES de interactuar con Supabase
+    // Esto asegura que la UI regrese inmediatamente a LoginScreen sin importar si Supabase se cuelga.
+    state = AuthState(); 
     try {
       await _supabase.auth.signOut();
     } catch (e) {
       print('[AuthProvider] Error during logout: $e');
-    } finally {
-      // Forzar el estado a null localmente para asegurar el redireccionamiento
-      state = AuthState();
     }
   }
 }
