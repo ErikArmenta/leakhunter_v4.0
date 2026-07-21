@@ -526,8 +526,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with SingleTickerProvid
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              ref.read(authProvider.notifier).logout();
+              Navigator.pop(context); // Cierra el dialog
+              ref.read(authProvider.notifier).logout(); // Limpia estado local y Supabase
+              
+              // Navegación imperativa forzosa para limpiar todo el stack de pantallas
+              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent.withOpacity(0.2),
