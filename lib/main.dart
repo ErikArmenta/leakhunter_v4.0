@@ -82,8 +82,15 @@ class LeakHunterApp extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final pendingId = ref.watch(pendingFugaIdProvider);
 
+    // Clave única por estado de autenticación.
+    // Cuando cambia (login/logout), Flutter destruye y recrea el Navigator
+    // completo, eliminando cualquier ruta empujada con pushReplacement.
+    final navKey = ValueKey(authState.user?.id ?? 'logged-out');
+
     if (authState.user == null) {
       return MaterialApp(
+        key: const ValueKey('logged-out'),
+        navigatorKey: GlobalKey<NavigatorState>(),
         title: 'Leak Hunter v5',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
@@ -93,6 +100,7 @@ class LeakHunterApp extends ConsumerWidget {
 
     if (pendingId != null) {
       return MaterialApp(
+        key: navKey,
         title: 'Leak Hunter v5',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
@@ -101,6 +109,7 @@ class LeakHunterApp extends ConsumerWidget {
     }
 
     return MaterialApp(
+      key: navKey,
       title: 'Leak Hunter v5',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
